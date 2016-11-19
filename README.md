@@ -9,6 +9,7 @@ Quickly build Kubernetes development clusters on AWS (other provisioners coming!
 Extract to the same location as kismatic.
 
 [Download latest executable (OSX)](https://kismatic-installer.s3-accelerate.amazonaws.com/latest-darwin/provision)
+
 [Download latest executable (Linux)](https://kismatic-installer.s3-accelerate.amazonaws.com/latest/provision)
 
 # How to use with AWS
