@@ -15,6 +15,7 @@ get-deps:
 	go get github.com/cloudflare/cfssl/csr
 	go get github.com/packethost/packngo
 	go get github.com/michaelbironneau/garbler/lib
+	go get github.com/spf13/cobra
 
 build: get-deps
 	GOOS=linux go build -o bin/linux/provision ./provision

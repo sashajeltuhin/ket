@@ -1,87 +1,68 @@
-[![Build Status](https://snap-ci.com/ulSrRsof30gMr7eaXZ_eufLs7XQtmS6Lw4eYwkmATn4/build_image)](https://snap-ci.com/apprenda/kismatic/branch/master)
+[![Build Status](https://snap-ci.com/apprenda/kismatic-provision/branch/master/build_image)](https://snap-ci.com/apprenda/kismatic-provision/branch/master)
 
-# Kismatic Enterprise Toolkit (KET): Design, Deployment and Operations System for Production Kubernetes Clusters
+# Kismatic provision
 
-Join our mailing list for updates on new releases: https://groups.google.com/forum/#!forum/kismatic-users
+Quickly build Kubernetes development clusters on AWS (other provisioners coming!)
 
-Join Slack to chat in real-time with the maintainers and community users of KET: https://kismatic.slack.com/signup
+# Download
 
-![KET](logo.png?raw=true "KET Logo")
+Extract to the same location as kismatic.
 
-KET is a set of tools for creating enterprise-tuned Kubernetes clusters. KET was built to make it simple for organizations who fully manage their own infrastructure to deploy and run secure, highly-available Kubernetes installations with built-in sane defaults for networking, circuit-breaking, cluster health-checking and much more!
+[Download latest executable (OSX)](https://kismatic-installer.s3-accelerate.amazonaws.com/latest-darwin/provision)
+[Download latest executable (Linux)](https://kismatic-installer.s3-accelerate.amazonaws.com/latest/provision)
 
-The KET tools include:
+# How to use with AWS
 
-1. [`Kismatic CLI`](docs/INSTALL.md)
-   * Command-line control plane and lifecycle tool for installing and configuring Kubernetes on provisioned infrastructure.
-2. [`Kismatic Inspector`](cmd/kismatic-inspector/README.md)
-   * Cluster health and validation utility for assuring that software and network configurations of cluster nodes are correct when installing Kubernetes.
-3. [`Kuberang`](https://github.com/apprenda/kuberang)
-   * Cluster build verification to ensure networking and scaling work as intended. This tool is used to smoke-test a newly built cluster.
-4. [Kismatic RPM & DEB Packages](docs/PACKAGES.md)
-   * Packages for installing Kubernetes and its dependencies, focused on specific roles in an HA cluster.
-   * With these packages installed on a local repo, it is possible to use Kismatic to install Kubernetes on nodes that do not have access to the public internet.
+Set environment variables:
 
-## Dependencies
-| Dependency | Current version |
-| --- | --- |
-| Kubernetes | 1.4.5 |
-| Docker | 1.11.2 |
-| Calico | 1.6 |
-| Etcd (for Kubernetes) | 3.0.13 |
-| Etcd (for Calico) | 2.37 |
+* **AWS_ACCESS_KEY_ID**: Your AWS access key, required for all operations
+* **AWS_SECRET_ACCESS_KEY**: Your AWS secret key, required for all operations
 
-[Download latest install tarball (OSX)](https://kismatic-installer.s3-accelerate.amazonaws.com/latest-darwin/kismatic.tar.gz)
+Your user will need access to create EC2 instances, as well as access to create VPCs and other 
+networking objects if you want these to be provisioned for you.
 
-[Download latest install tarball (Linux)](https://kismatic-installer.s3-accelerate.amazonaws.com/latest/kismatic.tar.gz)
+`kismatic aws create-minikube -f`
 
-# Dangerously Basic Installation Instructions
-Use the `kismatic install` command to work through installation of a cluster. The installer expects the underlying infrastructure to be accessible via SSH using Public Key Authentication.
+to create infrastructure for a minikube (single machine instance) along with a kismatic "plan" 
+file. The -f flag forces the creation of a new VPC and wide open security so you can begin
+working with your cluster immediately.
 
-The installation consists of three phases:
+`kismatic aws create -e 3 -m 2 -w 5`
 
-1. **Plan**: `kismatic install plan`
-   1. The installer will ask basic questions about the intent of your cluster.
-   2. The installer will produce a `kismatic-cluster.yaml` which you will edit to capture your intent.
-2. **Provision**
-   1. You provision your own machines (can also happen before the Plan phase)
-   2. You tweak your network
-   3. Review the installation plan in `kismatic-cluster.yaml` and add information for each node.
-3. **Install**: `kismatic install apply`
-   1. The installer checks your provisioned infrastructure against your intent.
-   2. If the installation plan is valid, Kismatic will build you a cluster.
-   3. After installation, Kismatic performs a basic test of scaling and networking on the cluster
+to create infrastructure for a 3 node etcd, 2 master node and 5 worker node cluster, along with 
+a kismatic "plan" file identifying these resources.
 
-###Using your cluster
+`kismatic aws delete-all`
 
-KET automatically configures and deploys [Kubernetes Dashboard](http://kubernetes.io/docs/user-guide/ui/) in your new cluster. Open the link provided at the end of the installation in your browser to use it. This link will be in the form of `https://%load_balanced_fqdn%:6443/ui`, using `%load_balanced_fqdn%`(from your `kismatic-cluster.yaml` file). You will also be prompted for credentials: use `admin` for the **User Name** and `%admin_password%` (from your `kismatic-cluster.yaml` file) for the **Password**.
+to delete all of the instances that have been created by Kismatic Provision and from the host you
+run the command from. Any created VPCs or other networking objects will not be cleaned and will
+be reused by future kismatic provision runs.
 
-The installer also generates a [kubeconfig file](http://kubernetes.io/docs/user-guide/kubeconfig-file/) required for [kubectl](http://kubernetes.io/docs/user-guide/kubectl-overview/), just follow the instructions provided at the end of the installation to use it. 
+# Building a more secure cluster
 
-# Usage Documentation
+The -f flag should not be used to construct clusters for production workloads -- it uses security
+groups that are wide open.
 
-[What you can build with Kismatic](docs/INTENT.md) -- Useful examples for various ways you can use Kismatic in your organization.
+You can build your own security group for infrastructure, opening whatever ports you may need plus
+an ssh port for kismatic to use for the provisioning of your cluster.
 
-[Plan & Install a Kubernetes cluster](docs/INSTALL.md) -- Overview and details for each phase of the KET installation lifecycle.
+You will need to specify environment variables for this SG and also for the corresponding subnet.
 
-[Using KET with linkerd](docs/LINKERD.md) -- Instructions on how to use KET with linkerd in 1 command.
+*  **AWS_SUBNET_ID**: The ID of a subnet to try to place machines into. If this environment variable exists,
+                      it must be a real subnet in the us-east-1 region or all commands will fail.
+*  **AWS_SECURITY_GROUP_ID**: The ID of a security group to place all new machines in. Must be a part of the
+                              above subnet or commands will fail.
+*  **AWS_KEY_NAME**: The name of a Keypair in AWS to be used to create machines. If empty, we will attempt
+                     to use a key named 'kismatic-integration-testing' and fail if it does not exist.
+*  **AWS_SSH_KEY_PATH**: The absolute path to the private key associated with the Key Name above. If left blank,
+                    we will attempt to use a key named 'kismaticuser.key' in the same directory as the
+					provision tool. This key is important as part of provisioning is ensuring that your
+					instance is online and is able to be reached via SSH.
 
-[Using KET with Calico](docs/NETWORKING.md) -- Instructions on how to use KET with the built-in SDN controller Project Calico.
 
-[Cert Generation](docs/CERT_GENERATION.md) -- Information on how KET handles certificates.
+# Current limitations
 
-[Kismatic CLI](https://github.com/apprenda/kismatic/tree/master/kismatic-cli-docs) -- Dynamically generated Cobra documentation for the Kismatic CLI.
-
-[Roadmap](ROADMAP.md) -- Insight into the near-term features roadmap for the next few releases of KET.
-
-# Development Documentation
-
-[How to Build KET](BUILDING.md)
-
-[How to Contribute to KET](CONTRIBUTING.md)
-
-[Running Integration Tests](INTEGRATION_TESTING.md)
-
-[KET Code of Conduct](code-of-conduct.md)
-
-[KET Release Process](RELEASE.md)
+1. Limited to us-east-1 region
+2. Limited to RedHat 7 and Ubuntu (the default)
+3. Creates low powered T2 class instances
+4. Master nodes are not properly load balanced.
