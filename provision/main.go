@@ -4,10 +4,11 @@ import (
 	"os"
 
 	"github.com/apprenda/kismatic-provision/provision/aws"
+	"github.com/apprenda/kismatic-provision/provision/packet"
 	"github.com/spf13/cobra"
 )
 
-var RootCmd = &cobra.Command{
+var rootCmd = &cobra.Command{
 	Use:   "provision",
 	Short: "Provision is a tool for making Kubernetes capable infrastructure",
 	Run: func(cmd *cobra.Command, args []string) {
@@ -17,11 +18,12 @@ var RootCmd = &cobra.Command{
 }
 
 func init() {
-	RootCmd.AddCommand(aws.Cmd())
+	rootCmd.AddCommand(aws.Cmd())
+	rootCmd.AddCommand(packet.Cmd())
 }
 
 func main() {
-	if err := RootCmd.Execute(); err != nil {
+	if err := rootCmd.Execute(); err != nil {
 		os.Exit(-1)
 	}
 }
