@@ -10,7 +10,13 @@ Extract to the same location as kismatic.
 
 [Download latest executable (OSX)](https://kismatic-installer.s3-accelerate.amazonaws.com/latest-darwin/provision)
 
+`wget -O provision https://kismatic-installer.s3-accelerate.amazonaws.com/latest-darwin/provision`
+`chmod +x provision`
+
 [Download latest executable (Linux)](https://kismatic-installer.s3-accelerate.amazonaws.com/latest/provision)
+
+`curl -L https://kismatic-installer.s3-accelerate.amazonaws.com/latest/provision`
+`chmod +x provision`
 
 # How to use with AWS
 
