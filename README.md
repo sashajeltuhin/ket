@@ -22,17 +22,17 @@ Set environment variables:
 Your user will need access to create EC2 instances, as well as access to create VPCs and other 
 networking objects if you want these to be provisioned for you.
 
-`kismatic aws create-minikube -f`
+`provision aws create-minikube -f`
 
 to create infrastructure for a minikube (single machine instance) along with a kismatic "plan" 
 file. The -f flag forces the creation of a new VPC with wide open security.
 
-`kismatic aws create -f -e 3 -m 2 -w 5`
+`provision aws create -f -e 3 -m 2 -w 5`
 
 to create infrastructure for a 3 node etcd, 2 master node and 5 worker node cluster, along with 
 a kismatic "plan" file identifying these resources. Again, -f forces the creation of a new VPC.
 
-`kismatic aws delete-all`
+`provision aws delete-all`
 
 to delete all of the instances that have been created by Kismatic Provision and from the host you
 run the command from. Any created VPCs or other networking objects will not be cleaned and will
