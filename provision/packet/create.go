@@ -56,7 +56,7 @@ func runCreate(opts *packetOpts) error {
 		distro = CentOS7
 	}
 	provTime := strconv.FormatInt(time.Now().Unix(), 10)
-	nodeNamePrefix := fmt.Sprintf("kismatic-%s-", provTime)
+	generateHostname := hostnameGenerator("kismatic", provTime)
 	nodeIDs := struct {
 		etcd   []string
 		master []string
@@ -70,7 +70,7 @@ func runCreate(opts *packetOpts) error {
 	fmt.Println("Provisioning nodes")
 	var i uint16
 	for i = 0; i < opts.EtcdNodeCount; i++ {
-		hostname := nodeNamePrefix + fmt.Sprintf("etcd-%d", i)
+		hostname := generateHostname("etcd", int(i))
 		nodeID, err := c.CreateNode(hostname, distro, region)
 		if err != nil {
 			return err
@@ -78,7 +78,7 @@ func runCreate(opts *packetOpts) error {
 		nodeIDs.etcd = append(nodeIDs.etcd, nodeID)
 	}
 	for i = 0; i < opts.MasterNodeCount; i++ {
-		hostname := nodeNamePrefix + fmt.Sprintf("master-%d", i)
+		hostname := generateHostname("master", int(i))
 		nodeID, err := c.CreateNode(hostname, distro, region)
 		if err != nil {
 			return err
@@ -86,7 +86,7 @@ func runCreate(opts *packetOpts) error {
 		nodeIDs.master = append(nodeIDs.master, nodeID)
 	}
 	for i = 0; i < opts.WorkerNodeCount; i++ {
-		hostname := nodeNamePrefix + fmt.Sprintf("worker-%d", i)
+		hostname := generateHostname("worker", int(i))
 		nodeID, err := c.CreateNode(hostname, distro, region)
 		if err != nil {
 			return err
@@ -203,4 +203,10 @@ func makeUniqueFile(count int) (*os.File, error) {
 
 func printNode(n Node) {
 	fmt.Printf("  %v (Public: %v, Private: %v)\n", n.Host, n.PublicIPv4, n.PrivateIPv4)
+}
+
+func hostnameGenerator(nodePrefix, timestamp string) func(string, int) string {
+	return func(nodeType string, nodeIndex int) string {
+		return fmt.Sprintf("%s-%s-%d-%s", nodePrefix, nodeType, nodeIndex, timestamp)
+	}
 }
