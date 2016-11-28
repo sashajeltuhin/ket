@@ -173,7 +173,7 @@ func (p *awsProvisioner) ForceProvision() error {
 	return nil
 }
 
-func (p awsProvisioner) ProvisionNodes(nodeCount NodeCount, distro LinuxDistro) (ProvisionedNodes, error) {
+func (p awsProvisioner) ProvisionNodes(blueprint NodeBlueprint, nodeCount NodeCount, distro LinuxDistro) (ProvisionedNodes, error) {
 	var ami AMI
 	switch distro {
 	case Ubuntu1604LTS:
@@ -188,21 +188,21 @@ func (p awsProvisioner) ProvisionNodes(nodeCount NodeCount, distro LinuxDistro) 
 	provisioned := ProvisionedNodes{}
 	var i uint16
 	for i = 0; i < nodeCount.Etcd; i++ {
-		nodeID, err := p.client.CreateNode(ami, T2Medium, 16)
+		nodeID, err := p.client.CreateNode(ami, blueprint.EtcdInstanceType, blueprint.EtcdDisk)
 		if err != nil {
 			return provisioned, err
 		}
 		provisioned.Etcd = append(provisioned.Etcd, NodeDeets{Id: nodeID})
 	}
 	for i = 0; i < nodeCount.Master; i++ {
-		nodeID, err := p.client.CreateNode(ami, T2Medium, 16)
+		nodeID, err := p.client.CreateNode(ami, blueprint.MasterInstanceType, blueprint.MasterDisk)
 		if err != nil {
 			return provisioned, err
 		}
 		provisioned.Master = append(provisioned.Master, NodeDeets{Id: nodeID})
 	}
 	for i = 0; i < nodeCount.Worker; i++ {
-		nodeID, err := p.client.CreateNode(ami, T2Medium, 50)
+		nodeID, err := p.client.CreateNode(ami, blueprint.WorkerInstanceType, blueprint.WorkerDisk)
 		if err != nil {
 			return provisioned, err
 		}

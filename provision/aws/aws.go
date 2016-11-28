@@ -24,6 +24,7 @@ type AWSOpts struct {
 	NoPlan          bool
 	ForceProvision  bool
 	KeyPairName     string
+	InstanceType    string
 }
 
 func Cmd() *cobra.Command {
@@ -67,7 +68,7 @@ func AWSCreateCmd() *cobra.Command {
 		
 For now, only the US East region is supported.
 
-Smallish T2 class Instances will be created with public IP addresses. The command will not return until the instances are all online and accessible via SSH.`,
+Smallish instances will be created with public IP addresses. The command will not return until the instances are all online and accessible via SSH.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return makeInfra(opts)
 		},
@@ -79,6 +80,7 @@ Smallish T2 class Instances will be created with public IP addresses. The comman
 	cmd.Flags().BoolVarP(&opts.Redhat, "useRedHat", "r", false, "If present, will install RedHat 7.3 rather than Ubuntu 16.04")
 	cmd.Flags().BoolVarP(&opts.NoPlan, "noplan", "n", false, "If present, foregoes generating a plan file in this directory referencing the newly created nodes")
 	cmd.Flags().BoolVarP(&opts.ForceProvision, "force-provision", "f", false, "If present, generate anything needed to build a cluster including VPCs, keypairs, routes, subnets, & a very insecure security group.")
+	cmd.Flags().StringVarP(&opts.InstanceType, "instance-type-blueprint", "i", "medium", "A blueprint of instance type(s). Current options: micro (all t2 micros), medium (t2 micros, workers are t2.medium), beefy (M4.large and xlarge)")
 
 	return cmd
 }
@@ -86,13 +88,13 @@ Smallish T2 class Instances will be created with public IP addresses. The comman
 func AWSCreateMinikubeCmd() *cobra.Command {
 	opts := AWSOpts{}
 	cmd := &cobra.Command{
-		Use:   "create-minikube",
+		Use:   "create-mini",
 		Short: "Creates infrastructure for a single-node instance. For now, only the US East region is supported.",
 		Long: `Creates infrastructure for a single-node instance. 
 		
 For now, only the US East region is supported.
 
-A smallish T2 class Instance will be created with public IP addresses. The command will not return until the instance is online and accessible via SSH.`,
+A smallish instance will be created with public IP addresses. The command will not return until the instance is online and accessible via SSH.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return makeInfraMinikube(opts)
 		},
@@ -101,6 +103,7 @@ A smallish T2 class Instance will be created with public IP addresses. The comma
 	cmd.Flags().BoolVarP(&opts.Redhat, "useRedHat", "r", false, "If present, will install RedHat 7.3 rather than Ubuntu 16.04")
 	cmd.Flags().BoolVarP(&opts.NoPlan, "noplan", "n", false, "If present, foregoes generating a plan file in this directory referencing the newly created nodes")
 	cmd.Flags().BoolVarP(&opts.ForceProvision, "force-provision", "f", false, "If present, generate anything needed to build a cluster including VPCs, keypairs, routes, subnets, & a very insecure security group.")
+	cmd.Flags().StringVarP(&opts.InstanceType, "instance-type-blueprint", "i", "medium", "A blueprint of instance type(s). Current options: micro (all t2 micros), medium (t2 micros, workers are t2.medium), beefy (M4.large and xlarge)")
 
 	return cmd
 }
@@ -224,6 +227,10 @@ func prepareToModifyAWS(forceProvision bool) error {
 }
 
 func makeInfraMinikube(opts AWSOpts) error {
+	blueprint, ok := NodeBlueprintMap[opts.InstanceType]
+	if !ok {
+		return fmt.Errorf("%v is not valid option for instance type blueprint.", opts.InstanceType)
+	}
 	if err := prepareToModifyAWS(opts.ForceProvision); err != nil {
 		return err
 	}
@@ -235,7 +242,7 @@ func makeInfraMinikube(opts AWSOpts) error {
 
 	fmt.Print("Provisioning")
 	awsClient, _ := AWSClientFromEnvironment()
-	nodes, err := awsClient.ProvisionNodes(NodeCount{
+	nodes, err := awsClient.ProvisionNodes(blueprint, NodeCount{
 		Worker: 1,
 	}, distro)
 
@@ -269,6 +276,10 @@ func makeInfraMinikube(opts AWSOpts) error {
 }
 
 func makeInfra(opts AWSOpts) error {
+	blueprint, ok := NodeBlueprintMap[opts.InstanceType]
+	if !ok {
+		return fmt.Errorf("%v is not valid option for instance type blueprint.", opts.InstanceType)
+	}
 	if err := prepareToModifyAWS(opts.ForceProvision); err != nil {
 		return err
 	}
@@ -280,7 +291,7 @@ func makeInfra(opts AWSOpts) error {
 
 	fmt.Print("Provisioning")
 	awsClient, _ := AWSClientFromEnvironment()
-	nodes, err := awsClient.ProvisionNodes(NodeCount{
+	nodes, err := awsClient.ProvisionNodes(blueprint, NodeCount{
 		Etcd:   opts.EtcdNodeCount,
 		Worker: opts.WorkerNodeCount,
 		Master: opts.MasterNodeCount,
