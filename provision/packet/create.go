@@ -18,6 +18,11 @@ func createCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "Creates infrastructure for a new cluster.",
+		Example: `# Create 3 etcd nodes, 2 master nodes and 3 worker nodes
+provision packet create -e 3 -m 2 -w 3
+
+# Create 1 etcd node, 1 master node and 1 worker node using CentOS 7
+provision packet create --useCentos`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runCreate(opts)
 		},
