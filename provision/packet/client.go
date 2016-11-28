@@ -168,6 +168,26 @@ func (c Client) GetSSHAccessibleNode(deviceID string, timeout time.Duration, ssh
 	}
 }
 
+func (c Client) ListNodes() ([]Node, error) {
+	client := c.getAPIClient()
+	devices, _, err := client.Devices.List(c.ProjectID)
+	if err != nil {
+		return nil, fmt.Errorf("error listing nodes: %v", err)
+	}
+	nodes := []Node{}
+	for _, d := range devices {
+		n := Node{
+			ID:          d.ID,
+			Host:        d.Hostname,
+			PublicIPv4:  getPublicIPv4(&d),
+			PrivateIPv4: getPrivateIPv4(&d),
+			SSHUser:     "root",
+		}
+		nodes = append(nodes, n)
+	}
+	return nodes, nil
+}
+
 func getPublicIPv4(device *packngo.Device) string {
 	for _, net := range device.Network {
 		if net.Public != true || net.AddressFamily != 4 {

@@ -33,5 +33,6 @@ Optional:
 	cmd.AddCommand(createCmd())
 	cmd.AddCommand(createMinikubeCmd())
 	cmd.AddCommand(deleteCmd())
+	cmd.AddCommand(listCmd())
 	return cmd
 }
