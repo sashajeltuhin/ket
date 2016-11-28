@@ -36,14 +36,13 @@ func runCreateMinikube(opts *packetOpts) error {
 		distro = CentOS7
 	}
 	provTime := strconv.FormatInt(time.Now().Unix(), 10)
-	nodeNamePrefix := fmt.Sprintf("kismatic-%s-", provTime)
 	region, err := regionFromString(opts.Region)
 	if err != nil {
 		return err
 	}
 
 	fmt.Println("Provisioning node")
-	hostname := nodeNamePrefix + fmt.Sprintf("node")
+	hostname := fmt.Sprintf("kismatic-node-%s", provTime)
 	nodeID, err := c.CreateNode(hostname, distro, region)
 	if err != nil {
 		return err
