@@ -33,7 +33,7 @@ const (
 
 // Client for managing infrastructure on Packet
 type Client struct {
-	Token     string
+	APIKey    string
 	ProjectID string
 	SSHKey    string
 
@@ -50,10 +50,10 @@ type Node struct {
 }
 
 func newFromEnv() (*Client, error) {
-	token := os.Getenv("PACKET_AUTH_TOKEN")
+	apiKey := os.Getenv("PACKET_API_KEY")
 	projectID := os.Getenv("PACKET_PROJECT_ID")
-	if token == "" || projectID == "" {
-		return nil, errors.New("PACKET_AUTH_TOKEN and PACKET_PROJECT_ID are required environment variables")
+	if apiKey == "" || projectID == "" {
+		return nil, errors.New("PACKET_API_KEY and PACKET_PROJECT_ID are required environment variables")
 	}
 	sshKey := os.Getenv("PACKET_SSH_KEY_PATH")
 	if sshKey == "" {
@@ -61,7 +61,7 @@ func newFromEnv() (*Client, error) {
 		sshKey = filepath.Join(cwd, "kismatic-packet.pem")
 	}
 	return &Client{
-		Token:     token,
+		APIKey:    apiKey,
 		ProjectID: projectID,
 		SSHKey:    sshKey,
 	}, nil
@@ -90,7 +90,7 @@ func (c *Client) getAPIClient() *packngo.Client {
 	if c.apiClient != nil {
 		return c.apiClient
 	}
-	c.apiClient = packngo.NewClient("", c.Token, http.DefaultClient)
+	c.apiClient = packngo.NewClient("", c.APIKey, http.DefaultClient)
 	return c.apiClient
 }
 
