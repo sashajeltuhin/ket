@@ -80,7 +80,7 @@ Smallish instances will be created with public IP addresses. The command will no
 	cmd.Flags().BoolVarP(&opts.Redhat, "useRedHat", "r", false, "If present, will install RedHat 7.3 rather than Ubuntu 16.04")
 	cmd.Flags().BoolVarP(&opts.NoPlan, "noplan", "n", false, "If present, foregoes generating a plan file in this directory referencing the newly created nodes")
 	cmd.Flags().BoolVarP(&opts.ForceProvision, "force-provision", "f", false, "If present, generate anything needed to build a cluster including VPCs, keypairs, routes, subnets, & a very insecure security group.")
-	cmd.Flags().StringVarP(&opts.InstanceType, "instance-type-blueprint", "i", "medium", "A blueprint of instance type(s). Current options: micro (all t2 micros), medium (t2 micros, workers are t2.medium), beefy (M4.large and xlarge)")
+	cmd.Flags().StringVarP(&opts.InstanceType, "instance-type-blueprint", "i", "small", "A blueprint of instance type(s). Current options: micro (all t2 micros), small (t2 micros, workers are t2.medium), beefy (M4.large and xlarge)")
 
 	return cmd
 }
