@@ -10,6 +10,8 @@ import (
 	"regexp"
 	"strconv"
 
+	"strings"
+
 	garbler "github.com/michaelbironneau/garbler/lib"
 	"github.com/spf13/cobra"
 )
@@ -18,13 +20,13 @@ type AWSOpts struct {
 	EtcdNodeCount   uint16
 	MasterNodeCount uint16
 	WorkerNodeCount uint16
-	Redhat          bool
 	LeaveArtifacts  bool
 	RunKismatic     bool
 	NoPlan          bool
 	ForceProvision  bool
 	KeyPairName     string
 	InstanceType    string
+	OS              string
 }
 
 func Cmd() *cobra.Command {
@@ -77,10 +79,10 @@ Smallish instances will be created with public IP addresses. The command will no
 	cmd.Flags().Uint16VarP(&opts.EtcdNodeCount, "etcdNodeCount", "e", 1, "Count of etcd nodes to produce.")
 	cmd.Flags().Uint16VarP(&opts.MasterNodeCount, "masterdNodeCount", "m", 1, "Count of master nodes to produce.")
 	cmd.Flags().Uint16VarP(&opts.WorkerNodeCount, "workerNodeCount", "w", 1, "Count of worker nodes to produce.")
-	cmd.Flags().BoolVarP(&opts.Redhat, "useRedHat", "r", false, "If present, will install RedHat 7.3 rather than Ubuntu 16.04")
 	cmd.Flags().BoolVarP(&opts.NoPlan, "noplan", "n", false, "If present, foregoes generating a plan file in this directory referencing the newly created nodes")
 	cmd.Flags().BoolVarP(&opts.ForceProvision, "force-provision", "f", false, "If present, generate anything needed to build a cluster including VPCs, keypairs, routes, subnets, & a very insecure security group.")
 	cmd.Flags().StringVarP(&opts.InstanceType, "instance-type-blueprint", "i", "small", "A blueprint of instance type(s). Current options: micro (all t2 micros), small (t2 micros, workers are t2.medium), beefy (M4.large and xlarge)")
+	cmd.Flags().StringVarP(&opts.OS, "operating system", "o", "ubuntu", "Which flavor of Linux to provision. Try ubuntu, centos or rhel.")
 
 	return cmd
 }
@@ -100,7 +102,7 @@ A smallish instance will be created with public IP addresses. The command will n
 		},
 	}
 
-	cmd.Flags().BoolVarP(&opts.Redhat, "useRedHat", "r", false, "If present, will install RedHat 7.3 rather than Ubuntu 16.04")
+	cmd.Flags().StringVarP(&opts.OS, "operating system", "o", "ubuntu", "Which flavor of Linux to provision. Try ubuntu, centos or rhel.")
 	cmd.Flags().BoolVarP(&opts.NoPlan, "noplan", "n", false, "If present, foregoes generating a plan file in this directory referencing the newly created nodes")
 	cmd.Flags().BoolVarP(&opts.ForceProvision, "force-provision", "f", false, "If present, generate anything needed to build a cluster including VPCs, keypairs, routes, subnets, & a very insecure security group.")
 	cmd.Flags().StringVarP(&opts.InstanceType, "instance-type-blueprint", "i", "small", "A blueprint of instance type(s). Current options: micro (all t2 micros), small (t2 micros, workers are t2.medium), beefy (M4.large and xlarge)")
@@ -227,18 +229,33 @@ func prepareToModifyAWS(forceProvision bool) error {
 	return nil
 }
 
-func makeInfraMinikube(opts AWSOpts) error {
+func assertOptions(opts AWSOpts) (NodeBlueprint, LinuxDistro, error) {
 	blueprint, ok := NodeBlueprintMap[opts.InstanceType]
 	if !ok {
-		return fmt.Errorf("%v is not valid option for instance type blueprint.", opts.InstanceType)
+		return NodeBlueprint{}, "", fmt.Errorf("%v is not valid option for instance type blueprint.", opts.InstanceType)
 	}
 	if err := prepareToModifyAWS(opts.ForceProvision); err != nil {
-		return err
+		return NodeBlueprint{}, "", err
 	}
 
 	distro := Ubuntu1604LTS
-	if opts.Redhat {
+	switch strings.ToLower(opts.OS) {
+	case "centos":
+		distro = CentOS7
+	case "ubuntu":
+		distro = Ubuntu1604LTS
+	case "rhel":
 		distro = Redhat7
+	default:
+		return NodeBlueprint{}, "", fmt.Errorf("%v is not a known option for OS")
+	}
+	return blueprint, distro, nil
+}
+
+func makeInfraMinikube(opts AWSOpts) error {
+	blueprint, distro, err := assertOptions(opts)
+	if err != nil {
+		return err
 	}
 
 	fmt.Print("Provisioning")
@@ -277,17 +294,9 @@ func makeInfraMinikube(opts AWSOpts) error {
 }
 
 func makeInfra(opts AWSOpts) error {
-	blueprint, ok := NodeBlueprintMap[opts.InstanceType]
-	if !ok {
-		return fmt.Errorf("%v is not valid option for instance type blueprint.", opts.InstanceType)
-	}
-	if err := prepareToModifyAWS(opts.ForceProvision); err != nil {
+	blueprint, distro, err := assertOptions(opts)
+	if err != nil {
 		return err
-	}
-
-	distro := Ubuntu1604LTS
-	if opts.Redhat {
-		distro = Redhat7
 	}
 
 	fmt.Print("Provisioning")
