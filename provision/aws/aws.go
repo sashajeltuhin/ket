@@ -10,6 +10,8 @@ import (
 	"regexp"
 	"strconv"
 
+	"strings"
+
 	garbler "github.com/michaelbironneau/garbler/lib"
 	"github.com/spf13/cobra"
 )
@@ -18,12 +20,13 @@ type AWSOpts struct {
 	EtcdNodeCount   uint16
 	MasterNodeCount uint16
 	WorkerNodeCount uint16
-	Redhat          bool
 	LeaveArtifacts  bool
 	RunKismatic     bool
 	NoPlan          bool
 	ForceProvision  bool
 	KeyPairName     string
+	InstanceType    string
+	OS              string
 }
 
 func Cmd() *cobra.Command {
@@ -67,7 +70,7 @@ func AWSCreateCmd() *cobra.Command {
 		
 For now, only the US East region is supported.
 
-Smallish T2 class Instances will be created with public IP addresses. The command will not return until the instances are all online and accessible via SSH.`,
+Smallish instances will be created with public IP addresses. The command will not return until the instances are all online and accessible via SSH.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return makeInfra(opts)
 		},
@@ -76,9 +79,10 @@ Smallish T2 class Instances will be created with public IP addresses. The comman
 	cmd.Flags().Uint16VarP(&opts.EtcdNodeCount, "etcdNodeCount", "e", 1, "Count of etcd nodes to produce.")
 	cmd.Flags().Uint16VarP(&opts.MasterNodeCount, "masterdNodeCount", "m", 1, "Count of master nodes to produce.")
 	cmd.Flags().Uint16VarP(&opts.WorkerNodeCount, "workerNodeCount", "w", 1, "Count of worker nodes to produce.")
-	cmd.Flags().BoolVarP(&opts.Redhat, "useRedHat", "r", false, "If present, will install RedHat 7.3 rather than Ubuntu 16.04")
 	cmd.Flags().BoolVarP(&opts.NoPlan, "noplan", "n", false, "If present, foregoes generating a plan file in this directory referencing the newly created nodes")
 	cmd.Flags().BoolVarP(&opts.ForceProvision, "force-provision", "f", false, "If present, generate anything needed to build a cluster including VPCs, keypairs, routes, subnets, & a very insecure security group.")
+	cmd.Flags().StringVarP(&opts.InstanceType, "instance-type-blueprint", "i", "small", "A blueprint of instance type(s). Current options: micro (all t2 micros), small (t2 micros, workers are t2.medium), beefy (M4.large and xlarge)")
+	cmd.Flags().StringVarP(&opts.OS, "operating system", "o", "ubuntu", "Which flavor of Linux to provision. Try ubuntu, centos or rhel.")
 
 	return cmd
 }
@@ -86,21 +90,22 @@ Smallish T2 class Instances will be created with public IP addresses. The comman
 func AWSCreateMinikubeCmd() *cobra.Command {
 	opts := AWSOpts{}
 	cmd := &cobra.Command{
-		Use:   "create-minikube",
+		Use:   "create-mini",
 		Short: "Creates infrastructure for a single-node instance. For now, only the US East region is supported.",
 		Long: `Creates infrastructure for a single-node instance. 
 		
 For now, only the US East region is supported.
 
-A smallish T2 class Instance will be created with public IP addresses. The command will not return until the instance is online and accessible via SSH.`,
+A smallish instance will be created with public IP addresses. The command will not return until the instance is online and accessible via SSH.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return makeInfraMinikube(opts)
 		},
 	}
 
-	cmd.Flags().BoolVarP(&opts.Redhat, "useRedHat", "r", false, "If present, will install RedHat 7.3 rather than Ubuntu 16.04")
+	cmd.Flags().StringVarP(&opts.OS, "operating system", "o", "ubuntu", "Which flavor of Linux to provision. Try ubuntu, centos or rhel.")
 	cmd.Flags().BoolVarP(&opts.NoPlan, "noplan", "n", false, "If present, foregoes generating a plan file in this directory referencing the newly created nodes")
 	cmd.Flags().BoolVarP(&opts.ForceProvision, "force-provision", "f", false, "If present, generate anything needed to build a cluster including VPCs, keypairs, routes, subnets, & a very insecure security group.")
+	cmd.Flags().StringVarP(&opts.InstanceType, "instance-type-blueprint", "i", "small", "A blueprint of instance type(s). Current options: micro (all t2 micros), small (t2 micros, workers are t2.medium), beefy (M4.large and xlarge)")
 
 	return cmd
 }
@@ -193,13 +198,14 @@ func deleteInfra() error {
 }
 
 func prepareToModifyAWS(forceProvision bool) error {
+	if err := checkAWSCredentials(); err != nil {
+		return err
+	}
+
 	awsClient, _ := AWSClientFromEnvironment()
 
 	fmt.Printf("Using region %v\n", awsClient.client.Config.Region)
 
-	if err := checkAWSCredentials(); err != nil {
-		return err
-	}
 	if forceProvision {
 		if err := awsClient.ForceProvision(); err != nil {
 			return err
@@ -223,19 +229,38 @@ func prepareToModifyAWS(forceProvision bool) error {
 	return nil
 }
 
-func makeInfraMinikube(opts AWSOpts) error {
+func assertOptions(opts AWSOpts) (NodeBlueprint, LinuxDistro, error) {
+	blueprint, ok := NodeBlueprintMap[opts.InstanceType]
+	if !ok {
+		return NodeBlueprint{}, "", fmt.Errorf("%v is not valid option for instance type blueprint.", opts.InstanceType)
+	}
 	if err := prepareToModifyAWS(opts.ForceProvision); err != nil {
-		return err
+		return NodeBlueprint{}, "", err
 	}
 
 	distro := Ubuntu1604LTS
-	if opts.Redhat {
+	switch strings.ToLower(opts.OS) {
+	case "centos":
+		distro = CentOS7
+	case "ubuntu":
+		distro = Ubuntu1604LTS
+	case "rhel":
 		distro = Redhat7
+	default:
+		return NodeBlueprint{}, "", fmt.Errorf("%v is not a known option for OS")
+	}
+	return blueprint, distro, nil
+}
+
+func makeInfraMinikube(opts AWSOpts) error {
+	blueprint, distro, err := assertOptions(opts)
+	if err != nil {
+		return err
 	}
 
 	fmt.Print("Provisioning")
 	awsClient, _ := AWSClientFromEnvironment()
-	nodes, err := awsClient.ProvisionNodes(NodeCount{
+	nodes, err := awsClient.ProvisionNodes(blueprint, NodeCount{
 		Worker: 1,
 	}, distro)
 
@@ -269,18 +294,14 @@ func makeInfraMinikube(opts AWSOpts) error {
 }
 
 func makeInfra(opts AWSOpts) error {
-	if err := prepareToModifyAWS(opts.ForceProvision); err != nil {
+	blueprint, distro, err := assertOptions(opts)
+	if err != nil {
 		return err
-	}
-
-	distro := Ubuntu1604LTS
-	if opts.Redhat {
-		distro = Redhat7
 	}
 
 	fmt.Print("Provisioning")
 	awsClient, _ := AWSClientFromEnvironment()
-	nodes, err := awsClient.ProvisionNodes(NodeCount{
+	nodes, err := awsClient.ProvisionNodes(blueprint, NodeCount{
 		Etcd:   opts.EtcdNodeCount,
 		Worker: opts.WorkerNodeCount,
 		Master: opts.MasterNodeCount,

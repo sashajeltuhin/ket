@@ -19,10 +19,6 @@ const (
 	CentOS7East = AMI("ami-6d1c2007")
 	// Redhat7East is the AMI for RedHat 7
 	RedHat7East = AMI("ami-b63769a1")
-	// T2Micro is the T2 Micro instance type
-	T2Micro = InstanceType(ec2.InstanceTypeT2Micro)
-	// T2Medium is the T2 Medium instance type
-	T2Medium = InstanceType(ec2.InstanceTypeT2Medium)
 )
 
 // A Node on AWS
@@ -296,6 +292,9 @@ func (c *Client) MaybeProvisionKeypair(keyloc string) error {
 
 	switch err := err.(type) {
 	case nil:
+		if len(a.KeyPairs) > 0 {
+			fmt.Printf("Found keypair %v\n", a.KeyPairs[0].KeyFingerprint)
+		}
 		return nil
 	case awserr.Error:
 		if err.Code() != "InvalidKeyPair.NotFound" {
@@ -303,10 +302,6 @@ func (c *Client) MaybeProvisionKeypair(keyloc string) error {
 		}
 	default:
 		return err
-	}
-
-	if len(a.KeyPairs) > 0 {
-		return nil
 	}
 
 	//if it isn't there, try to make it
