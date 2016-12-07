@@ -71,6 +71,5 @@ You will need to specify environment variables for this SG and also for the corr
 # Current limitations
 
 1. Limited to us-east-1 region
-2. Limited to RedHat 7 and Ubuntu (the default)
-3. Creates low powered T2 class instances
-4. Master nodes are not properly load balanced.
+2. CentOS support requires a "subscription" to the AMI on the Amazon Marketplace. If you try to build CentOS nodes without first having clicked through the EULA, you will receive an error with a URL you will need to visit on AWS. This happens once per account.
+3. Master nodes are not properly load balanced.
