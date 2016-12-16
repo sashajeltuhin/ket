@@ -58,4 +58,10 @@ worker:
   - host: {{.Hostname}}
     ip: {{.PublicIP}}
     internalip: {{.PrivateIP}}{{end}}
+ingress:
+  expected_count: 1
+  nodes:{{range .Worker[0:1]}}
+  - host: {{.Hostname}}
+    ip: {{.PublicIP}}
+    internalip: {{.PrivateIP}}{{end}}
 `
