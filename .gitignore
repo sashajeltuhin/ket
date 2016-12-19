@@ -23,5 +23,5 @@ _testmain.go
 *.test
 *.prof
 
-kismatic-cluster*.yaml
+kismatic-*.yaml
 bin/

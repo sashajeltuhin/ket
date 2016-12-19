@@ -9,6 +9,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/apprenda/kismatic-provision/provision/plan"
 	garbler "github.com/michaelbironneau/garbler/lib"
 	"github.com/spf13/cobra"
 )
@@ -101,9 +102,9 @@ func runCreate(opts *packetOpts) error {
 
 	fmt.Println("Waiting for nodes to be accessible via SSH. This takes a while...")
 	nodes := struct {
-		etcd   []Node
-		master []Node
-		worker []Node
+		etcd   []plan.Node
+		master []plan.Node
+		worker []plan.Node
 	}{}
 	for _, id := range nodeIDs.etcd {
 		node, err := c.GetSSHAccessibleNode(id, 15*time.Minute, c.SSHKey)
@@ -146,25 +147,27 @@ func runCreate(opts *packetOpts) error {
 	}
 
 	// Write the plan file out
-	plan := plan{
+	planit := plan.Plan{
 		Etcd:                nodes.etcd,
 		Master:              nodes.master,
 		Worker:              nodes.worker,
+		Ingress:             nodes.worker[0:1],
 		MasterNodeFQDN:      nodes.master[0].PublicIPv4,
 		MasterNodeShortName: nodes.master[0].PublicIPv4,
 		SSHUser:             nodes.master[0].SSHUser,
 		SSHKeyFile:          c.SSHKey,
 		AdminPassword:       generateAlphaNumericPassword(),
 	}
-	template, err := template.New("plan").Parse(overlayNetworkPlan)
+	template, err := template.New("plan").Parse(plan.OverlayNetworkPlan)
 	if err != nil {
 		return err
 	}
 	f, err := makeUniqueFile(0)
-	if err := template.Execute(f, plan); err != nil {
+	if err := template.Execute(f, planit); err != nil {
 		return err
 	}
-	fmt.Printf("Wrote kismatic plan file to %s\n", f.Name())
+	fmt.Println("To install your cluster, run:")
+	fmt.Println("./kismatic install apply -f " + f.Name())
 	return nil
 }
 
@@ -206,7 +209,7 @@ func makeUniqueFile(count int) (*os.File, error) {
 	return makeUniqueFile(count + 1)
 }
 
-func printNode(n Node) {
+func printNode(n plan.Node) {
 	fmt.Printf("  %v (Public: %v, Private: %v)\n", n.Host, n.PublicIPv4, n.PrivateIPv4)
 }
 

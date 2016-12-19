@@ -12,6 +12,7 @@ import (
 
 	"strings"
 
+	"github.com/apprenda/kismatic-provision/provision/plan"
 	garbler "github.com/michaelbironneau/garbler/lib"
 	"github.com/spf13/cobra"
 )
@@ -278,16 +279,16 @@ func makeInfraMinikube(opts AWSOpts) error {
 		fmt.Println("Your instances are ready.\n")
 		printRole("Minikube", &nodes.Worker)
 	} else {
-		return makePlan(&PlanAWS{
-			AdminPassword:            generateAlphaNumericPassword(),
-			Etcd:                     []NodeDeets{nodes.Worker[0]},
-			Master:                   []NodeDeets{nodes.Worker[0]},
-			Worker:                   []NodeDeets{nodes.Worker[0]},
-			MasterNodeFQDN:           nodes.Worker[0].PublicIP,
-			MasterNodeShortName:      nodes.Worker[0].PrivateIP,
-			SSHKeyFile:               sshKey,
-			SSHUser:                  nodes.Worker[0].SSHUser,
-			AllowPackageInstallation: true,
+		return makePlan(&plan.Plan{
+			AdminPassword:       generateAlphaNumericPassword(),
+			Etcd:                []plan.Node{nodes.Worker[0]},
+			Master:              []plan.Node{nodes.Worker[0]},
+			Worker:              []plan.Node{nodes.Worker[0]},
+			Ingress:             []plan.Node{nodes.Worker[0]},
+			MasterNodeFQDN:      nodes.Worker[0].PublicIPv4,
+			MasterNodeShortName: nodes.Worker[0].PrivateIPv4,
+			SSHKeyFile:          sshKey,
+			SSHUser:             nodes.Worker[0].SSHUser,
 		})
 	}
 	return nil
@@ -321,13 +322,14 @@ func makeInfra(opts AWSOpts) error {
 		fmt.Println("Your instances are ready.\n")
 		printNodes(&nodes)
 	} else {
-		return makePlan(&PlanAWS{
+		return makePlan(&plan.Plan{
 			AdminPassword:       generateAlphaNumericPassword(),
 			Etcd:                nodes.Etcd,
 			Master:              nodes.Master,
 			Worker:              nodes.Worker,
-			MasterNodeFQDN:      nodes.Master[0].PublicIP,
-			MasterNodeShortName: nodes.Master[0].PrivateIP,
+			Ingress:             []plan.Node{nodes.Worker[0]},
+			MasterNodeFQDN:      nodes.Master[0].PublicIPv4,
+			MasterNodeShortName: nodes.Master[0].PrivateIPv4,
 			SSHKeyFile:          sshKey,
 			SSHUser:             nodes.Master[0].SSHUser,
 		})
@@ -335,8 +337,8 @@ func makeInfra(opts AWSOpts) error {
 	return nil
 }
 
-func makePlan(plan *PlanAWS) error {
-	template, err := template.New("planAWSOverlay").Parse(planAWSOverlay)
+func makePlan(pln *plan.Plan) error {
+	template, err := template.New("planAWSOverlay").Parse(plan.OverlayNetworkPlan)
 	if err != nil {
 		return err
 	}
@@ -349,7 +351,7 @@ func makePlan(plan *PlanAWS) error {
 	defer f.Close()
 	w := bufio.NewWriter(f)
 
-	if err = template.Execute(w, &plan); err != nil {
+	if err = template.Execute(w, &pln); err != nil {
 		return err
 	}
 
@@ -380,10 +382,10 @@ func printNodes(nodes *ProvisionedNodes) {
 	printRole("Worker", &nodes.Worker)
 }
 
-func printRole(title string, nodes *[]NodeDeets) {
+func printRole(title string, nodes *[]plan.Node) {
 	fmt.Printf("%v:\n", title)
 	for _, node := range *nodes {
-		fmt.Printf("  %v (%v, %v)\n", node.Id, node.PublicIP, node.PrivateIP)
+		fmt.Printf("  %v (%v, %v)\n", node.ID, node.PublicIPv4, node.PrivateIPv4)
 	}
 }
 

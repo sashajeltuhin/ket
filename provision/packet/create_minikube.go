@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/apprenda/kismatic-provision/provision/plan"
 	"github.com/spf13/cobra"
 )
 
@@ -63,25 +64,27 @@ func runCreateMinikube(opts *packetOpts) error {
 		return nil
 	}
 
-	// Write the plan file out
-	plan := plan{
-		Etcd:                []Node{*node},
-		Master:              []Node{*node},
-		Worker:              []Node{*node},
+	template, err := template.New("plan").Parse(plan.OverlayNetworkPlan)
+	if err != nil {
+		return err
+	}
+
+	plan := plan.Plan{
+		Etcd:                []plan.Node{*node},
+		Master:              []plan.Node{*node},
+		Worker:              []plan.Node{*node},
+		Ingress:             []plan.Node{*node},
 		MasterNodeFQDN:      node.PublicIPv4,
 		MasterNodeShortName: node.PublicIPv4,
 		SSHUser:             node.SSHUser,
 		SSHKeyFile:          c.SSHKey,
 		AdminPassword:       generateAlphaNumericPassword(),
 	}
-	template, err := template.New("plan").Parse(overlayNetworkPlan)
-	if err != nil {
-		return err
-	}
 	f, err := makeUniqueFile(0)
 	if err := template.Execute(f, plan); err != nil {
 		return err
 	}
-	fmt.Printf("Wrote kismatic plan file to %s\n", f.Name())
+	fmt.Println("To install your cluster, run:")
+	fmt.Println("./kismatic install apply -f " + f.Name())
 	return nil
 }
