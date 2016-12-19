@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/apprenda/kismatic-provision/provision/plan"
+
 	garbler "github.com/michaelbironneau/garbler/lib"
 	"github.com/spf13/cobra"
 )
@@ -158,6 +159,7 @@ func runCreate(opts *packetOpts) error {
 		SSHKeyFile:          c.SSHKey,
 		AdminPassword:       generateAlphaNumericPassword(),
 	}
+
 	template, err := template.New("plan").Parse(plan.OverlayNetworkPlan)
 	if err != nil {
 		return err

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/apprenda/kismatic-provision/provision/plan"
+
 	"github.com/spf13/cobra"
 )
 
@@ -86,5 +87,6 @@ func runCreateMinikube(opts *packetOpts) error {
 	}
 	fmt.Println("To install your cluster, run:")
 	fmt.Println("./kismatic install apply -f " + f.Name())
+
 	return nil
 }

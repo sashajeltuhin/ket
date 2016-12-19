@@ -100,6 +100,7 @@ func (c Client) DeleteNode(deviceID string) error {
 }
 
 // GetNode returns the node that matches the given ID
+
 func (c Client) GetNode(deviceID string) (*plan.Node, error) {
 	client := c.getAPIClient()
 	dev, _, err := client.Devices.Get(deviceID)
