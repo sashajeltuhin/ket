@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/apprenda/kismatic-provision/provision/plan"
 	"github.com/packethost/packngo"
 )
 
@@ -38,15 +39,6 @@ type Client struct {
 	SSHKey    string
 
 	apiClient *packngo.Client
-}
-
-// Node is a Packet.net node
-type Node struct {
-	ID          string
-	Host        string
-	PublicIPv4  string
-	PrivateIPv4 string
-	SSHUser     string
 }
 
 func newFromEnv() (*Client, error) {
@@ -108,7 +100,8 @@ func (c Client) DeleteNode(deviceID string) error {
 }
 
 // GetNode returns the node that matches the given ID
-func (c Client) GetNode(deviceID string) (*Node, error) {
+
+func (c Client) GetNode(deviceID string) (*plan.Node, error) {
 	client := c.getAPIClient()
 	dev, _, err := client.Devices.Get(deviceID)
 	if err != nil {
@@ -117,7 +110,7 @@ func (c Client) GetNode(deviceID string) (*Node, error) {
 	if dev == nil {
 		return nil, fmt.Errorf("did not get a device from server")
 	}
-	node := &Node{
+	node := &plan.Node{
 		ID:          deviceID,
 		Host:        dev.Hostname,
 		PublicIPv4:  getPublicIPv4(dev),
@@ -128,14 +121,14 @@ func (c Client) GetNode(deviceID string) (*Node, error) {
 }
 
 // GetSSHAccessibleNode blocks until the node is accessible via SSH and returns the node's information.
-func (c Client) GetSSHAccessibleNode(deviceID string, timeout time.Duration, sshKey string) (*Node, error) {
+func (c Client) GetSSHAccessibleNode(deviceID string, timeout time.Duration, sshKey string) (*plan.Node, error) {
 	timeoutChan := make(chan bool, 1)
 	go func() {
 		time.Sleep(timeout)
 		timeoutChan <- true
 	}()
 	// Loop until we get the node's public IP
-	var node *Node
+	var node *plan.Node
 	var err error
 	for {
 		select {
@@ -168,15 +161,15 @@ func (c Client) GetSSHAccessibleNode(deviceID string, timeout time.Duration, ssh
 	}
 }
 
-func (c Client) ListNodes() ([]Node, error) {
+func (c Client) ListNodes() ([]plan.Node, error) {
 	client := c.getAPIClient()
 	devices, _, err := client.Devices.List(c.ProjectID)
 	if err != nil {
 		return nil, fmt.Errorf("error listing nodes: %v", err)
 	}
-	nodes := []Node{}
+	nodes := []plan.Node{}
 	for _, d := range devices {
-		n := Node{
+		n := plan.Node{
 			ID:          d.ID,
 			Host:        d.Hostname,
 			PublicIPv4:  getPublicIPv4(&d),

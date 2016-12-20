@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"time"
+
+	"github.com/apprenda/kismatic-provision/provision/plan"
 )
 
 const (
@@ -42,25 +44,17 @@ func (nc NodeCount) Total() uint16 {
 }
 
 type ProvisionedNodes struct {
-	Etcd   []NodeDeets
-	Master []NodeDeets
-	Worker []NodeDeets
+	Etcd   []plan.Node
+	Master []plan.Node
+	Worker []plan.Node
 }
 
-func (p ProvisionedNodes) allNodes() []NodeDeets {
-	n := []NodeDeets{}
+func (p ProvisionedNodes) allNodes() []plan.Node {
+	n := []plan.Node{}
 	n = append(n, p.Etcd...)
 	n = append(n, p.Master...)
 	n = append(n, p.Worker...)
 	return n
-}
-
-type NodeDeets struct {
-	Id        string
-	Hostname  string
-	PublicIP  string
-	PrivateIP string
-	SSHUser   string
 }
 
 type sshMachineProvisioner struct {
@@ -192,38 +186,38 @@ func (p awsProvisioner) ProvisionNodes(blueprint NodeBlueprint, nodeCount NodeCo
 		if err != nil {
 			return provisioned, err
 		}
-		provisioned.Etcd = append(provisioned.Etcd, NodeDeets{Id: nodeID})
+		provisioned.Etcd = append(provisioned.Etcd, plan.Node{ID: nodeID})
 	}
 	for i = 0; i < nodeCount.Master; i++ {
 		nodeID, err := p.client.CreateNode(ami, blueprint.MasterInstanceType, blueprint.MasterDisk)
 		if err != nil {
 			return provisioned, err
 		}
-		provisioned.Master = append(provisioned.Master, NodeDeets{Id: nodeID})
+		provisioned.Master = append(provisioned.Master, plan.Node{ID: nodeID})
 	}
 	for i = 0; i < nodeCount.Worker; i++ {
 		nodeID, err := p.client.CreateNode(ami, blueprint.WorkerInstanceType, blueprint.WorkerDisk)
 		if err != nil {
 			return provisioned, err
 		}
-		provisioned.Worker = append(provisioned.Worker, NodeDeets{Id: nodeID})
+		provisioned.Worker = append(provisioned.Worker, plan.Node{ID: nodeID})
 	}
 	// Wait until all instances have their public IPs assigned
 	for i := range provisioned.Etcd {
 		etcd := &provisioned.Etcd[i]
-		if err := p.updateNodeWithDeets(etcd.Id, etcd); err != nil {
+		if err := p.updateNodeWithDeets(etcd.ID, etcd); err != nil {
 			return provisioned, err
 		}
 	}
 	for i := range provisioned.Master {
 		master := &provisioned.Master[i]
-		if err := p.updateNodeWithDeets(master.Id, master); err != nil {
+		if err := p.updateNodeWithDeets(master.ID, master); err != nil {
 			return provisioned, err
 		}
 	}
 	for i := range provisioned.Worker {
 		worker := &provisioned.Worker[i]
-		if err := p.updateNodeWithDeets(worker.Id, worker); err != nil {
+		if err := p.updateNodeWithDeets(worker.ID, worker); err != nil {
 			return provisioned, err
 		}
 	}
@@ -231,22 +225,22 @@ func (p awsProvisioner) ProvisionNodes(blueprint NodeBlueprint, nodeCount NodeCo
 	return provisioned, nil
 }
 
-func (p awsProvisioner) updateNodeWithDeets(nodeID string, node *NodeDeets) error {
+func (p awsProvisioner) updateNodeWithDeets(nodeID string, node *plan.Node) error {
 	for {
 		fmt.Print(".")
 		awsNode, err := p.client.GetNode(nodeID)
 		if err != nil {
 			return err
 		}
-		node.PublicIP = awsNode.PublicIP
-		node.PrivateIP = awsNode.PrivateIP
+		node.PublicIPv4 = awsNode.PublicIP
+		node.PrivateIPv4 = awsNode.PrivateIP
 		node.SSHUser = awsNode.SSHUser
 
 		// Get the hostname from the DNS name
 		re := regexp.MustCompile("[^.]*")
 		hostname := re.FindString(awsNode.PrivateDNSName)
-		node.Hostname = hostname
-		if node.PublicIP != "" && node.Hostname != "" && node.PrivateIP != "" {
+		node.Host = hostname
+		if node.PublicIPv4 != "" && node.Host != "" && node.PrivateIPv4 != "" {
 			return nil
 		}
 		time.Sleep(5 * time.Second)
@@ -257,7 +251,7 @@ func (p awsProvisioner) TerminateNodes(runningNodes ProvisionedNodes) error {
 	nodes := runningNodes.allNodes()
 	nodeIDs := []string{}
 	for _, n := range nodes {
-		nodeIDs = append(nodeIDs, n.Id)
+		nodeIDs = append(nodeIDs, n.ID)
 	}
 	return p.client.DestroyNodes(nodeIDs)
 }
@@ -265,7 +259,7 @@ func (p awsProvisioner) TerminateNodes(runningNodes ProvisionedNodes) error {
 func WaitForSSH(ProvisionedNodes ProvisionedNodes, sshKey string) error {
 	nodes := ProvisionedNodes.allNodes()
 	for _, n := range nodes {
-		BlockUntilSSHOpen(n.PublicIP, n.SSHUser, sshKey)
+		BlockUntilSSHOpen(n.PublicIPv4, n.SSHUser, sshKey)
 	}
 	fmt.Println()
 	return nil

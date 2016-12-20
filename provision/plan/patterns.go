@@ -1,9 +1,10 @@
-package packet
+package plan
 
-type plan struct {
+type Plan struct {
 	Etcd                []Node
 	Master              []Node
 	Worker              []Node
+	Ingress             []Node
 	MasterNodeFQDN      string
 	MasterNodeShortName string
 	SSHUser             string
@@ -11,7 +12,7 @@ type plan struct {
 	AdminPassword       string
 }
 
-const overlayNetworkPlan = `cluster:
+const OverlayNetworkPlan = `cluster:
   name: kubernetes
   admin_password: {{.AdminPassword}}      # This password is used to login to the Kubernetes Dashboard and can also be used for administration without a security certificate
   allow_package_installation: true      # When false, installation will not occur if any node is missing the correct deb/rpm packages. When true, the installer will attempt to install missing packages for you.
@@ -49,6 +50,12 @@ master:
 worker:
   expected_count: {{len .Worker}}
   nodes:{{range .Worker}}
+  - host: {{.Host}}
+    ip: {{.PublicIPv4}}
+    internalip: {{.PrivateIPv4}}{{end}}
+ingress:
+  expected_count: {{len .Ingress}}
+  nodes:{{range .Ingress}}
   - host: {{.Host}}
     ip: {{.PublicIPv4}}
     internalip: {{.PrivateIPv4}}{{end}}

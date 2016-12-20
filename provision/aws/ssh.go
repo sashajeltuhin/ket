@@ -6,9 +6,11 @@ import (
 	"os"
 	"os/exec"
 	"time"
+
+	"github.com/apprenda/kismatic-provision/provision/plan"
 )
 
-func runViaSSH(cmds []string, hosts []NodeDeets, sshKey string, period time.Duration) error {
+func runViaSSH(cmds []string, hosts []plan.Node, sshKey string, period time.Duration) error {
 	timeout := time.After(period)
 	bail := make(chan struct{})
 	cmdSuccess := make(chan bool)
@@ -18,9 +20,9 @@ func runViaSSH(cmds []string, hosts []NodeDeets, sshKey string, period time.Dura
 	// b) an error occurred when running a command,
 	// c) the goroutine got a signal to bail
 	for _, host := range hosts {
-		go func(node NodeDeets) {
+		go func(node plan.Node) {
 			for _, cmd := range cmds {
-				res, err := executeCmd(cmd, node.PublicIP, node.SSHUser, sshKey)
+				res, err := executeCmd(cmd, node.PublicIPv4, node.SSHUser, sshKey)
 				fmt.Println(res)
 				select {
 				case cmdSuccess <- err == nil:
@@ -59,11 +61,11 @@ func executeCmd(cmd, hostname, user, sshKey string) (string, error) {
 	return hostname + ": " + string(sshOut), sshErr
 }
 
-func copyFileToRemote(file string, destFile string, node NodeDeets, sshKey string, period time.Duration) error {
+func copyFileToRemote(file string, destFile string, node plan.Node, sshKey string, period time.Duration) error {
 	timeout := time.After(period)
 	success := make(chan bool)
 	go func() {
-		out, err := scpFile(file, destFile, node.SSHUser, node.PublicIP, sshKey)
+		out, err := scpFile(file, destFile, node.SSHUser, node.PublicIPv4, sshKey)
 		fmt.Println(out)
 		success <- err == nil
 	}()
