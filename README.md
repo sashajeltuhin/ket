@@ -4,6 +4,11 @@
 
 Quickly build Kubernetes development clusters on AWS (other provisioners coming!)
 
+[Mac & AWS] (docs/macaws.md)
+[Linux & AWS] (docs/linuxaws.md)
+[Mac & Packet] (docs/macpacket.md)
+[Linux & Packet] (docs/linuxpacket.md)
+
 # Download
 
 Extract to the same location as kismatic.
