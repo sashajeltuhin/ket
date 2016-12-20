@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/apprenda/kismatic-provision/provision/plan"
-
 	"github.com/spf13/cobra"
 )
 
