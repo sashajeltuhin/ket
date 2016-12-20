@@ -4,6 +4,11 @@
 
 Quickly build Kubernetes development, test and demo clusters on AWS and ![Packet](https://packet.net) (other provisioners coming!)
 
+[Mac & AWS] (docs/macaws.md)
+[Linux & AWS] (docs/linuxaws.md)
+[Mac & Packet] (docs/macpacket.md)
+[Linux & Packet] (docs/linuxpacket.md)
+
 # Download
 
 Extract to the same location as kismatic.
