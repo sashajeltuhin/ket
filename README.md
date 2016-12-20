@@ -2,7 +2,7 @@
 
 # Kismatic provision
 
-Quickly build Kubernetes development clusters on AWS (other provisioners coming!)
+Quickly build Kubernetes development, test and demo clusters on AWS and ![Packet](https://packet.net) (other provisioners coming!)
 
 # Download
 
@@ -46,7 +46,7 @@ to delete all of the instances that have been created by Kismatic Provision and 
 run the command from. Any created VPCs or other networking objects will not be cleaned and will
 be reused by future kismatic provision runs.
 
-# Building a more secure cluster
+## Building a more secure cluster
 
 The -f flag should not be used to construct clusters for production workloads -- it uses security
 groups that are wide open. Kismatic will not alter your existing networking
@@ -61,15 +61,46 @@ You will need to specify environment variables for this SG and also for the corr
 *  **AWS_SECURITY_GROUP_ID**: The ID of a security group to place all new machines in. Must be a part of the
                               above subnet or commands will fail.
 *  **AWS_KEY_NAME**: The name of a Keypair in AWS to be used to create machines. If empty, we will attempt
-                     to use a key named 'kismatic-integration-testing' and fail if it does not exist.
+                     to use a key named `kismatic-integration-testing` and fail if it does not exist.
 *  **AWS_SSH_KEY_PATH**: The absolute path to the private key associated with the Key Name above. If left blank,
                     we will attempt to use a key named 'kismaticuser.key' in the same directory as the
 		    provision tool. This key is important as part of provisioning is ensuring that your
 		    instance is online and is able to be reached via SSH.
 
+# How to use with Packet
+
+Required environment variables:
+
+* **PACKET_API_KEY**: Your Packet.net API key, required for all operations
+* **PACKET_PROJECT_ID**: The ID of the project where machines will be provisioned
+
+Optional:
+
+* ** PACKET_SSH_KEY_PATH**: The path to the SSH private key to be used for accessing the machines. If empty, 
+			    a file called `kismatic-packet.pem` in the current working directory is used as 
+			    the SSH private key.
+
+`provision packet create-minikube`
+
+to create infrastructure for a minikube (single machine instance) on a Type 0 along with a kismatic "plan" 
+file.
+
+`provision aws create -e 3 -m 2 -w 5`
+
+to create infrastructure for a 3 node etcd, 2 master node and 5 worker node cluster, along with 
+a kismatic "plan" file identifying these resources.
+
+`provision aws delete <hostname>`
+
+to delete a Packet host by name. You will need to call once for every created node.
+
+`provision aws delete --all`
+
+to delete all of the instances in your packet project. I mean all of 'em, even ones NOT created by the provision tool! Use with caution!
 
 # Current limitations
 
-1. Limited to us-east-1 region
+1. AWS is imited to us-east-1 region. (Packet has no such restriction)
 2. CentOS support requires a "subscription" to the AMI on the Amazon Marketplace. If you try to build CentOS nodes without first having clicked through the EULA, you will receive an error with a URL you will need to visit on AWS. This happens once per account.
 3. Master nodes are not properly load balanced.
+4. The first Worker node is called out as an Ingress node in generated plan files. You can remove this if you don't have a need for Ingress.
