@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"os"
+	"path/filepath"
 
 	"github.com/apprenda/kismatic-provision/provision/utils"
 )
@@ -117,6 +119,13 @@ func (i *Infrastructure) ensureSSHKeys(privateSSHKeyPath string) error {
 		i.PrivateSSHKeyPath = privateSSHKeyPath
 	}
 
+	// ensure absolute path
+	var absErr error
+	i.PrivateSSHKeyPath, absErr = filepath.Abs(i.PrivateSSHKeyPath)
+	if absErr != nil {
+		return absErr
+	}
+
 	i.PublicSSHKeyPath = i.PrivateSSHKeyPath + ".pub"
 
 	privateKey, privateKeyErr := utils.LoadOrCreatePrivateSSHKey(i.PrivateSSHKeyPath)
@@ -128,6 +137,10 @@ func (i *Infrastructure) ensureSSHKeys(privateSSHKeyPath string) error {
 	if publicKeyErr != nil {
 		return publicKeyErr
 	}
+
+	// ensure correct permissions
+	os.Chmod(i.PrivateSSHKeyPath, 0600)
+	os.Chmod(i.PublicSSHKeyPath, 0600)
 
 	return nil
 }

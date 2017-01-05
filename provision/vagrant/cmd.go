@@ -127,20 +127,30 @@ func makeInfrastructure(opts *VagrantCmdOpts) error {
 		return vagrantErr
 	}
 
-	planFile, planErr := createPlan(opts, infrastructure)
-	if planErr != nil {
-		return planErr
+	if opts.OnlyGenerateVagrantfile {
+		fmt.Println("To create your local VMs, run:")
+		fmt.Println("vagrant up")
+	} else {
+		if vagrantUpErr := vagrantUp(); vagrantUpErr != nil {
+			return vagrantUpErr
+		}
 	}
 
-	fmt.Println("To install your cluster, run:")
-	fmt.Println("vagrant up (if you have multiple Vagrantfiles, rename the active one to Vagrantfile")
-	fmt.Println("./kismatic install apply -f " + planFile)
+	if !opts.NoPlan {
+		planFile, planErr := createPlan(opts, infrastructure)
+		if planErr != nil {
+			return planErr
+		}
+
+		fmt.Println("To install your cluster, run:")
+		fmt.Println("./kismatic install apply -f " + planFile)
+	}
 
 	return nil
 }
 
 func createVagrantfile(opts *VagrantCmdOpts, infrastructure *Infrastructure) (string, error) {
-	vagrantfile, err := utils.MakeUniqueFile("Vagrantfile", "", 0)
+	vagrantfile, err := utils.MakeFileAskOnOverwrite("Vagrantfile")
 	if err != nil {
 		return "", err
 	}

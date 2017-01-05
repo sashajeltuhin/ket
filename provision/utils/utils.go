@@ -8,15 +8,70 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"math/rand"
 	"net"
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 
 	garbler "github.com/michaelbironneau/garbler/lib"
 	"golang.org/x/crypto/ssh"
 )
+
+func MakeFileAskOnOverwrite(name string) (*os.File, error) {
+	if _, err := os.Stat(name); os.IsNotExist(err) {
+		return os.Create(name)
+	} else {
+		prompt := fmt.Sprintf("Existing file with name %v, Overwrite?", name)
+		if AskForConfirmation(prompt) {
+			truncateErr := os.Truncate(name, 0)
+			if truncateErr != nil {
+				return nil, truncateErr
+			}
+
+			return os.OpenFile(name, os.O_APPEND|os.O_WRONLY, 0666)
+		} else {
+			return nil, errors.New(fmt.Sprintf("existing file %v cannot be overwritten", name))
+		}
+	}
+}
+
+func AskForConfirmation(prompt string) bool {
+	fmt.Printf("%v  (y/N):", prompt)
+
+	var response string
+	_, err := fmt.Scanln(&response)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	okayResponseSet := MakeStringSet([]string{"y", "yes"})
+	response = strings.ToLower(response)
+
+	if len(response) == 0 {
+		return false
+	} else if StringSetContains(okayResponseSet, response) {
+		return true
+	} else {
+		return AskForConfirmation(prompt)
+	}
+}
+
+func StringSetContains(set map[string]struct{}, value string) bool {
+	_, ok := set[value]
+	return ok
+}
+
+func MakeStringSet(slice []string) map[string]struct{} {
+	set := make(map[string]struct{}, len(slice))
+	for _, s := range slice {
+		set[s] = struct{}{}
+	}
+	return set
+}
 
 func MakeUniqueFile(name string, suffix string, count int) (*os.File, error) {
 	var filename string
