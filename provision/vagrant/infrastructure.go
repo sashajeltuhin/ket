@@ -32,7 +32,6 @@ type InfrastructureOpts struct {
 	NodeCIDR          string
 	Redhat            bool
 	PrivateSSHKeyPath string
-	SSHUser           string
 	Vagrantfile       string
 }
 
@@ -43,10 +42,12 @@ type NodeDetails struct {
 }
 
 type Infrastructure struct {
-	Network      net.IPNet
-	Broadcast    net.IP
-	Nodes        []NodeDetails
-	DNSReflector string
+	Network           net.IPNet
+	Broadcast         net.IP
+	Nodes             []NodeDetails
+	DNSReflector      string
+	PrivateSSHKeyPath string
+	PublicSSHKeyPath  string
 }
 
 func NewInfrastructure(opts *InfrastructureOpts) (*Infrastructure, error) {
@@ -65,6 +66,11 @@ func NewInfrastructure(opts *InfrastructureOpts) (*Infrastructure, error) {
 		Network:   *network,
 		Broadcast: broadcast,
 		Nodes:     []NodeDetails{},
+	}
+
+	sshError := i.ensureSSHKeys(opts.PrivateSSHKeyPath)
+	if sshError != nil {
+		return nil, sshError
 	}
 
 	var overlapTypes NodeType
@@ -101,6 +107,29 @@ func NewInfrastructure(opts *InfrastructureOpts) (*Infrastructure, error) {
 	}
 
 	return i, nil
+}
+
+func (i *Infrastructure) ensureSSHKeys(privateSSHKeyPath string) error {
+
+	if privateSSHKeyPath == "" {
+		i.PrivateSSHKeyPath = "kismatic-cluster.pem"
+	} else {
+		i.PrivateSSHKeyPath = privateSSHKeyPath
+	}
+
+	i.PublicSSHKeyPath = i.PrivateSSHKeyPath + ".pub"
+
+	privateKey, privateKeyErr := utils.LoadOrCreatePrivateSSHKey(i.PrivateSSHKeyPath)
+	if privateKeyErr != nil {
+		return privateKeyErr
+	}
+
+	publicKeyErr := utils.CreatePublicKey(privateKey, i.PublicSSHKeyPath)
+	if publicKeyErr != nil {
+		return publicKeyErr
+	}
+
+	return nil
 }
 
 func (i *Infrastructure) appendNode(nodeIndex uint16, name string, types NodeType) (*NodeDetails, error) {

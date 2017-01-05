@@ -1,7 +1,13 @@
 package utils
 
 import (
+	cryptorand "crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"errors"
+	"fmt"
+	"io/ioutil"
 	"math/rand"
 	"net"
 	"os"
@@ -9,6 +15,7 @@ import (
 	"strconv"
 
 	garbler "github.com/michaelbironneau/garbler/lib"
+	"golang.org/x/crypto/ssh"
 )
 
 func MakeUniqueFile(name string, suffix string, count int) (*os.File, error) {
@@ -89,4 +96,54 @@ func BroadcastIPv4(network net.IPNet) (net.IP, error) {
 	}
 
 	return broadcast, nil
+}
+
+func LoadOrCreatePrivateSSHKey(privateKeyPath string) (*rsa.PrivateKey, error) {
+	blockType := "RSA PRIVATE KEY"
+
+	if _, statErr := os.Stat(privateKeyPath); os.IsNotExist(statErr) {
+		privateKey, generateErr := rsa.GenerateKey(cryptorand.Reader, 1024)
+		if generateErr != nil {
+			return nil, generateErr
+		}
+
+		// generate and write private key as PEM
+		privateKeyFile, createErr := os.Create(privateKeyPath)
+		defer privateKeyFile.Close()
+		if createErr != nil {
+			return nil, createErr
+		}
+
+		privateKeyPEM := &pem.Block{Type: blockType, Bytes: x509.MarshalPKCS1PrivateKey(privateKey)}
+		if encodeErr := pem.Encode(privateKeyFile, privateKeyPEM); encodeErr != nil {
+			return nil, encodeErr
+		}
+
+		return privateKey, nil
+	} else {
+		buffer, readErr := ioutil.ReadFile(privateKeyPath)
+		if readErr != nil {
+			return nil, readErr
+		}
+
+		block, rest := pem.Decode(buffer)
+		if len(rest) > 0 {
+			return nil, errors.New("LoadOrCreatePrivateSSHKey: extra data in private key PEM block")
+		}
+
+		if block.Type != blockType {
+			return nil, errors.New(fmt.Sprintf("LoadOrCreatePrivateSSHKey: expecting a block type of %v but got %v", blockType, block.Type))
+		}
+
+		return x509.ParsePKCS1PrivateKey(block.Bytes)
+	}
+}
+
+func CreatePublicKey(privateKey *rsa.PrivateKey, publicKeyPath string) error {
+	// generate and write public key
+	pub, err := ssh.NewPublicKey(&privateKey.PublicKey)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(publicKeyPath, ssh.MarshalAuthorizedKey(pub), 0655)
 }

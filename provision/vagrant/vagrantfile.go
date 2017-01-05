@@ -9,9 +9,15 @@ import (
 type Vagrant struct {
 	Opts           *InfrastructureOpts
 	Infrastructure *Infrastructure
+	UnescapedLTLT  template.HTML
+	UnescapedGTGT  template.HTML
 }
 
 func (v *Vagrant) Write(file *os.File) error {
+
+	v.UnescapedGTGT = template.HTML(">>")
+	v.UnescapedLTLT = template.HTML("<<")
+
 	template, err := template.New("vagrantfileOverlay").Parse(vagrantfileOverlay)
 	if err != nil {
 		return err
@@ -29,14 +35,12 @@ func (v *Vagrant) Write(file *os.File) error {
 }
 
 const vagrantfileOverlay = `boxes = [
-    {{range $index,$element := .Nodes}}
-    {
+    {{range $index,$element := .Infrastructure.Nodes}}{{if $index}},{{end}}{
         :name => "{{.Name}}",
         :eth1 => "{{.IP.String}}",
         :mem => "1024",
         :cpu => "1"
-    }{{if $index}},{{end}}
-    {{end}}
+    }{{end}}
 ]
 
 Vagrant.configure(2) do |config|
@@ -46,11 +50,11 @@ Vagrant.configure(2) do |config|
 
   # Add the ssh public key to the node
   config.vm.provision "shell" do |s|
-    ssh_pub_key = File.readlines("#{Dir.home}/.ssh/id_rsa.pub").first.strip
-    s.inline = <<-SHELL
+    ssh_pub_key = File.readlines("{{.Infrastructure.PublicSSHKeyPath}}").first.strip
+    s.inline = {{.UnescapedLTLT}}-SHELL
       mkdir -p /root/.ssh
-      echo #{ssh_pub_key} >> /home/vagrant/.ssh/authorized_keys
-      echo #{ssh_pub_key} >> /root/.ssh/authorized_keys
+      echo #{ssh_pub_key} {{.UnescapedGTGT}} /home/vagrant/.ssh/authorized_keys
+      echo #{ssh_pub_key} {{.UnescapedGTGT}} /root/.ssh/authorized_keys
     SHELL
   end
 

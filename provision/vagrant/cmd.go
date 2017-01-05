@@ -30,8 +30,7 @@ func AddSharedFlags(cmd *cobra.Command, opts *VagrantCmdOpts) {
 	//InfrastructureOps
 	(*cmd).Flags().StringVarP(&opts.NodeCIDR, "nodeCIDR", "c", "192.168.205.0/24", "Network CIDR to use in creating the VM Nodes")
 	(*cmd).Flags().BoolVarP(&opts.Redhat, "useRedHat", "r", false, "If present, will install RedHat 7.3 rather than Ubuntu 16.04")
-	(*cmd).Flags().StringVarP(&opts.PrivateSSHKeyPath, "keypath", "k", "id_rsa", "Path to private SSH key to use in provisioning VMs.  If only keyname supplied, user's '.ssh' directory assumed")
-	(*cmd).Flags().StringVar(&opts.SSHUser, "user", "vagrant", "SSH user to use for provisioning")
+	(*cmd).Flags().StringVarP(&opts.PrivateSSHKeyPath, "keypath", "k", "", "Path to private SSH key to use in provisioning VMs.")
 	(*cmd).Flags().StringVarP(&opts.Vagrantfile, "vagrantfile", "f", "Vagrantfile", "Path to Vagrantfile to generate")
 
 	//PlanOpts
