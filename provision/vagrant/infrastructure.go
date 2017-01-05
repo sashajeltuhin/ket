@@ -139,7 +139,7 @@ func (i *Infrastructure) appendNode(nodeIndex uint16, name string, types NodeTyp
 		return nil, err
 	}
 
-	hostname := fmt.Sprintf("%v%v", name, nodeIndex)
+	hostname := fmt.Sprintf("%v%03d", name, nodeIndex)
 
 	node := NodeDetails{
 		Name:  hostname,
