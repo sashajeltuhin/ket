@@ -248,7 +248,7 @@ func assertOptions(opts AWSOpts) (NodeBlueprint, LinuxDistro, error) {
 	case "rhel":
 		distro = Redhat7
 	default:
-		return NodeBlueprint{}, "", fmt.Errorf("%v is not a known option for OS")
+		return NodeBlueprint{}, "", fmt.Errorf("%s is not a known option for OS", opts.OS)
 	}
 	return blueprint, distro, nil
 }
