@@ -12,6 +12,8 @@ Quickly build Kubernetes development, test and demo clusters on AWS and [Packet]
 
 [Linux & Packet] (docs/linuxpacket.md)
 
+[Mac & Vagrant] (docs/macvagrant.md)
+
 # Download
 
 Extract to the same location as kismatic.
