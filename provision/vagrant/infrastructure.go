@@ -70,10 +70,10 @@ func NewInfrastructure(opts *InfrastructureOpts) (*Infrastructure, error) {
 		Nodes:     []NodeDetails{},
 	}
 
-	sshError := i.ensureSSHKeys(opts.PrivateSSHKeyPath)
-	if sshError != nil {
-		return nil, sshError
-	}
+	// sshError := i.ensureSSHKeys(opts.PrivateSSHKeyPath)
+	// if sshError != nil {
+	// 	return nil, sshError
+	// }
 
 	var overlapTypes NodeType
 

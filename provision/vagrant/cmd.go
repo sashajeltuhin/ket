@@ -28,23 +28,29 @@ func Cmd() *cobra.Command {
 
 func AddSharedFlags(cmd *cobra.Command, opts *VagrantCmdOpts) {
 	//InfrastructureOps
-	(*cmd).Flags().StringVarP(&opts.NodeCIDR, "nodeCIDR", "c", "192.168.205.0/24", "Network CIDR to use in creating the VM Nodes")
-	(*cmd).Flags().BoolVarP(&opts.Redhat, "useRedHat", "r", true, "If present, will install RedHat 7.3 rather than Ubuntu 16.04")
-	(*cmd).Flags().StringVarP(&opts.PrivateSSHKeyPath, "keypath", "k", "", "Path to private SSH key to use in provisioning VMs.")
-	(*cmd).Flags().StringVarP(&opts.Vagrantfile, "vagrantfile", "f", "Vagrantfile", "Path to Vagrantfile to generate")
+	//(*cmd).Flags().StringVarP(&opts.NodeCIDR, "nodeCIDR", "c", "192.168.205.0/24", "Network CIDR to use in creating the VM Nodes")
+	opts.NodeCIDR = "192.168.42.2/24"
+	(*cmd).Flags().BoolVarP(&opts.Redhat, "useCentOS", "r", false, "If present, will install CentOS 7.3 rather than Ubuntu 16.04")
+	// (*cmd).Flags().StringVarP(&opts.PrivateSSHKeyPath, "keypath", "k", "", "Path to private SSH key to use in provisioning VMs.")
+	//(*cmd).Flags().StringVarP(&opts.Vagrantfile, "vagrantfile", "f", "Vagrantfile", "Path to Vagrantfile to generate")
+	opts.Vagrantfile = "Vagrantfile"
 
 	//PlanOpts
-	(*cmd).Flags().BoolVar(&opts.AllowPackageInstallation, "allowPackageInstallation", true, "If true, allows os packages to be installed automatically")
-	(*cmd).Flags().BoolVar(&opts.AutoConfiguredDockerRegistry, "autoConfiguredDockerRegistry", true, "If true, installs a auto-configured Docker registry")
-	(*cmd).Flags().StringVar(&opts.DockerRegistryHost, "dockerRegistryIP", "", "IP or hostname for your Docker registry. An internal registry will NOT be setup when this field is provided. Must be accessible from all the nodes in the cluster.")
-	(*cmd).Flags().Uint16Var(&opts.DockerRegistryPort, "dockerRegistryPort", 443, "Port for your Docker registry")
-	(*cmd).Flags().StringVar(&opts.DockerRegistryCAPath, "dockerRegistryCAPath", "", "Absolute path to the CA that was used when starting your Docker registry. The docker daemons on all nodes in the cluster will be configured with this CA.")
+	// (*cmd).Flags().BoolVar(&opts.AllowPackageInstallation, "allowPackageInstallation", true, "If true, allows os packages to be installed automatically")
+	opts.AllowPackageInstallation = true
+	//(*cmd).Flags().BoolVar(&opts.AutoConfiguredDockerRegistry, "autoConfiguredDockerRegistry", true, "If true, installs a auto-configured Docker registry")
+	opts.AutoConfiguredDockerRegistry = true
+	// (*cmd).Flags().StringVar(&opts.DockerRegistryHost, "dockerRegistryIP", "", "IP or hostname for your Docker registry. An internal registry will NOT be setup when this field is provided. Must be accessible from all the nodes in the cluster.")
+	// (*cmd).Flags().Uint16Var(&opts.DockerRegistryPort, "dockerRegistryPort", 443, "Port for your Docker registry")
+	// (*cmd).Flags().StringVar(&opts.DockerRegistryCAPath, "dockerRegistryCAPath", "", "Absolute path to the CA that was used when starting your Docker registry. The docker daemons on all nodes in the cluster will be configured with this CA.")
 	(*cmd).Flags().StringVar(&opts.AdminPassword, "adminPassword", utils.GenerateAlphaNumericPassword(), "This password is used to login to the Kubernetes Dashboard and can also be used for administration without a security certificate")
-	(*cmd).Flags().StringVar(&opts.PodCIDR, "podCIDR", "172.168.16.0/16", "Kubernetes will assign pods IPs in this range. Do not use a range that is already in use on your local network!")
-	(*cmd).Flags().StringVar(&opts.ServiceCIDR, "serviceCIDR", "172.168.17.0/16", "Kubernetes will assign services IPs in this range. Do not use a range that is already in use by your local network or pod network!")
-
+	opts.AdminPassword = utils.GenerateAlphaNumericPassword()
+	// (*cmd).Flags().StringVar(&opts.PodCIDR, "podCIDR", "172.168.16.0/16", "Kubernetes will assign pods IPs in this range. Do not use a range that is already in use on your local network!")
+	opts.PodCIDR = "172.168.16.0/16"
+	// (*cmd).Flags().StringVar(&opts.ServiceCIDR, "serviceCIDR", "172.168.17.0/16", "Kubernetes will assign services IPs in this range. Do not use a range that is already in use by your local network or pod network!")
+	opts.ServiceCIDR = "172.168.17.0/16"
 	// VagrantCmdOpts
-	(*cmd).Flags().BoolVar(&opts.OnlyGenerateVagrantfile, "onlyGenerateVagrantFile", false, "If present, forgoes performing `vagrant up` on the generated Vagrantfile")
+	// (*cmd).Flags().BoolVar(&opts.OnlyGenerateVagrantfile, "onlyGenerateVagrantFile", false, "If present, forgoes performing `vagrant up` on the generated Vagrantfile")
 	(*cmd).Flags().BoolVar(&opts.NoPlan, "noplan", false, "If present, foregoes generating a plan file in this directory referencing the newly created nodes")
 }
 
@@ -77,8 +83,8 @@ until the instances are all online and accessible via SSH.`,
 	cmd.Flags().Uint16VarP(&etcdCount, "etcdNodeCount", "e", 1, "Count of etcd nodes to produce.")
 	cmd.Flags().Uint16VarP(&masterCount, "masterdNodeCount", "m", 1, "Count of master nodes to produce.")
 	cmd.Flags().Uint16VarP(&workerCount, "workerNodeCount", "w", 1, "Count of worker nodes to produce.")
-	cmd.Flags().Uint16VarP(&ingressCount, "ingressNodeCount", "i", 1, "Count of ingress nodes to produce")
-	cmd.Flags().BoolVar(&opts.OverlapRoles, "overlapRoles", false, "Overlap roles to create as few nodes as possible")
+	// cmd.Flags().Uint16VarP(&ingressCount, "ingressNodeCount", "i", 1, "Count of ingress nodes to produce")
+	// cmd.Flags().BoolVar(&opts.OverlapRoles, "overlapRoles", false, "Overlap roles to create as few nodes as possible")
 
 	AddSharedFlags(cmd, &opts)
 
@@ -135,6 +141,8 @@ func makeInfrastructure(opts *VagrantCmdOpts) error {
 			return vagrantUpErr
 		}
 	}
+
+	infrastructure.PrivateSSHKeyPath = grabSSHConfig()
 
 	if !opts.NoPlan {
 		planFile, planErr := createPlan(opts, infrastructure)

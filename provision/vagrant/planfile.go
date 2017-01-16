@@ -53,7 +53,7 @@ func (p *Plan) Worker() []NodeDetails {
 }
 
 func (p *Plan) Ingress() []NodeDetails {
-	return p.Infrastructure.nodesByType(Ingress)
+	return p.Infrastructure.nodesByType(Worker)[0:1]
 }
 
 const planVagrantOverlay = `cluster:

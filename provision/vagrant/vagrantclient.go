@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"regexp"
 )
 
 const vagrantCmd string = "vagrant"
@@ -16,6 +17,26 @@ func ensureVagrantOnPath() string {
 		log.Fatal("Unable to locate vagrant on path.  It can be downloaded from http://www.vagrantup.com")
 	}
 	return path
+}
+
+func grabSSHConfig() string {
+	cmd := exec.Command("vagrant", "ssh-config")
+	bytes, err := cmd.CombinedOutput()
+
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error getting ssh config for newly created vagrant image", err)
+		os.Exit(1)
+	}
+
+	r, err := regexp.Compile(`.*IdentityFile\ (.*)`)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error compiling regex", err)
+		os.Exit(1)
+	}
+
+	a := r.FindSubmatch(bytes)
+
+	return string(a[1])
 }
 
 func vagrantUp() error {

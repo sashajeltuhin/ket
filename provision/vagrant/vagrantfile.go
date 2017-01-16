@@ -45,18 +45,8 @@ const vagrantfileOverlay = `boxes = [
 
 Vagrant.configure(2) do |config|
 
-  config.vm.box = "{{if .Opts.Redhat}}centos/7{{else}}ubuntu/xenial64{{end}}"
+  config.vm.box = "{{if .Opts.Redhat}}bento/centos-7.3{{else}}bento/ubuntu-16.04{{end}}"
   config.ssh.insert_key = false
-
-  # Add the ssh public key to the node
-  config.vm.provision "shell" do |s|
-    ssh_pub_key = File.readlines("{{.Infrastructure.PublicSSHKeyPath}}").first.strip
-    s.inline = {{.UnescapedLTLT}}-SHELL
-      mkdir -p /root/.ssh
-      echo #{ssh_pub_key} {{.UnescapedGTGT}} /home/vagrant/.ssh/authorized_keys
-      echo #{ssh_pub_key} {{.UnescapedGTGT}} /root/.ssh/authorized_keys
-    SHELL
-  end
 
   # Turn off shared folders
   config.vm.synced_folder ".", "/vagrant", id: "vagrant-root", disabled: true
@@ -73,9 +63,16 @@ Vagrant.configure(2) do |config|
       config.vm.provider "virtualbox" do |v|
         v.customize ["modifyvm", :id, "--memory", opts[:mem]]
         v.customize ["modifyvm", :id, "--cpus", opts[:cpu]]
+        # needed to get around a vagrant stack bug with Ubuntu, safe for Centos
+        v.customize ["modifyvm", :id, "--cableconnected1", "on"]
       end
 
       config.vm.network :private_network, ip: opts[:eth1]
+
+      {{if .Opts.Redhat}}# needed to get around a vagrant stack bug with Centos 7x, safe for ubuntu
+      # https://github.com/mitchellh/vagrant/issues/5590
+
+      config.vm.provision "shell", inline: "nmcli connection reload; systemctl restart network.service"{{end}}
     end
   end
 end`
