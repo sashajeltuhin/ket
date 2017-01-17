@@ -13,7 +13,7 @@ import (
 func createMinikubeCmd() *cobra.Command {
 	opts := &packetOpts{}
 	cmd := &cobra.Command{
-		Use:   "create-minikube",
+		Use:   "create-mini",
 		Short: "Creates infrastructure for a single node cluster.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runCreateMinikube(opts)
