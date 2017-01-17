@@ -35,6 +35,8 @@ provision packet create --useCentos`,
 	cmd.Flags().BoolVar(&opts.CentOS, "useCentos", false, "If present, will install CentOS 7 rather than Ubuntu 16.04")
 	cmd.Flags().BoolVarP(&opts.NoPlan, "noplan", "n", false, "If present, foregoes generating a plan file in this directory referencing the newly created nodes")
 	cmd.Flags().StringVar(&opts.Region, "region", "us-east", "The region to be used for provisioning machines. One of us-east|us-west|eu-west")
+	cmd.Flags().BoolVarP(&opts.Storage, "storage-cluster", "s", false, "Create a storage cluster from all Worker nodes.")
+
 	return cmd
 }
 
@@ -147,12 +149,18 @@ func runCreate(opts *packetOpts) error {
 		return nil
 	}
 
+	storageNodes := []plan.Node{}
+	if opts.Storage {
+		storageNodes = nodes.worker
+	}
+
 	// Write the plan file out
 	planit := plan.Plan{
 		Etcd:                nodes.etcd,
 		Master:              nodes.master,
 		Worker:              nodes.worker,
 		Ingress:             nodes.worker[0:1],
+		Storage:             storageNodes,
 		MasterNodeFQDN:      nodes.master[0].PublicIPv4,
 		MasterNodeShortName: nodes.master[0].PublicIPv4,
 		SSHUser:             nodes.master[0].SSHUser,

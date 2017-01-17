@@ -22,6 +22,8 @@ func createMinikubeCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&opts.CentOS, "useCentos", false, "If present, will install CentOS 7 rather than Ubuntu 16.04")
 	cmd.Flags().BoolVarP(&opts.NoPlan, "noplan", "n", false, "If present, foregoes generating a plan file in this directory referencing the newly created nodes")
 	cmd.Flags().StringVar(&opts.Region, "region", "us-east", "The region to be used for provisioning machines. One of us-east|us-west|eu-west")
+	cmd.Flags().BoolVarP(&opts.Storage, "storage-cluster", "s", false, "Create a storage cluster from all Worker nodes.")
+
 	return cmd
 }
 
@@ -69,11 +71,17 @@ func runCreateMinikube(opts *packetOpts) error {
 		return err
 	}
 
+	storageNodes := []plan.Node{}
+	if opts.Storage {
+		storageNodes = []plan.Node{*node}
+	}
+
 	plan := plan.Plan{
 		Etcd:                []plan.Node{*node},
 		Master:              []plan.Node{*node},
 		Worker:              []plan.Node{*node},
 		Ingress:             []plan.Node{*node},
+		Storage:             storageNodes,
 		MasterNodeFQDN:      node.PublicIPv4,
 		MasterNodeShortName: node.PublicIPv4,
 		SSHUser:             node.SSHUser,

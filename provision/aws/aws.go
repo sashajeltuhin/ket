@@ -28,6 +28,7 @@ type AWSOpts struct {
 	KeyPairName     string
 	InstanceType    string
 	OS              string
+	Storage         bool
 }
 
 func Cmd() *cobra.Command {
@@ -83,7 +84,8 @@ Smallish instances will be created with public IP addresses. The command will no
 	cmd.Flags().BoolVarP(&opts.NoPlan, "noplan", "n", false, "If present, foregoes generating a plan file in this directory referencing the newly created nodes")
 	cmd.Flags().BoolVarP(&opts.ForceProvision, "force-provision", "f", false, "If present, generate anything needed to build a cluster including VPCs, keypairs, routes, subnets, & a very insecure security group.")
 	cmd.Flags().StringVarP(&opts.InstanceType, "instance-type-blueprint", "i", "small", "A blueprint of instance type(s). Current options: micro (all t2 micros), small (t2 micros, workers are t2.medium), beefy (M4.large and xlarge)")
-	cmd.Flags().StringVarP(&opts.OS, "operating system", "o", "ubuntu", "Which flavor of Linux to provision. Try ubuntu, centos or rhel.")
+	cmd.Flags().StringVarP(&opts.OS, "operating-system", "o", "ubuntu", "Which flavor of Linux to provision. Try ubuntu, centos or rhel.")
+	cmd.Flags().BoolVarP(&opts.Storage, "storage-cluster", "s", false, "Create a storage cluster from all Worker nodes.")
 
 	return cmd
 }
@@ -103,10 +105,11 @@ A smallish instance will be created with public IP addresses. The command will n
 		},
 	}
 
-	cmd.Flags().StringVarP(&opts.OS, "operating system", "o", "ubuntu", "Which flavor of Linux to provision. Try ubuntu, centos or rhel.")
+	cmd.Flags().StringVarP(&opts.OS, "operating-system", "o", "ubuntu", "Which flavor of Linux to provision. Try ubuntu, centos or rhel.")
 	cmd.Flags().BoolVarP(&opts.NoPlan, "noplan", "n", false, "If present, foregoes generating a plan file in this directory referencing the newly created nodes")
 	cmd.Flags().BoolVarP(&opts.ForceProvision, "force-provision", "f", false, "If present, generate anything needed to build a cluster including VPCs, keypairs, routes, subnets, & a very insecure security group.")
 	cmd.Flags().StringVarP(&opts.InstanceType, "instance-type-blueprint", "i", "small", "A blueprint of instance type(s). Current options: micro (all t2 micros), small (t2 micros, workers are t2.medium), beefy (M4.large and xlarge)")
+	cmd.Flags().BoolVarP(&opts.Storage, "storage-cluster", "s", false, "Create a storage cluster from all Worker nodes.")
 
 	return cmd
 }
@@ -279,12 +282,17 @@ func makeInfraMinikube(opts AWSOpts) error {
 		fmt.Println("Your instances are ready.\n")
 		printRole("Minikube", &nodes.Worker)
 	} else {
+		storageNodes := []plan.Node{}
+		if opts.Storage {
+			storageNodes = []plan.Node{nodes.Worker[0]}
+		}
 		return makePlan(&plan.Plan{
 			AdminPassword:       generateAlphaNumericPassword(),
 			Etcd:                []plan.Node{nodes.Worker[0]},
 			Master:              []plan.Node{nodes.Worker[0]},
 			Worker:              []plan.Node{nodes.Worker[0]},
 			Ingress:             []plan.Node{nodes.Worker[0]},
+			Storage:             storageNodes,
 			MasterNodeFQDN:      nodes.Worker[0].PublicIPv4,
 			MasterNodeShortName: nodes.Worker[0].PrivateIPv4,
 			SSHKeyFile:          sshKey,
@@ -322,12 +330,18 @@ func makeInfra(opts AWSOpts) error {
 		fmt.Println("Your instances are ready.\n")
 		printNodes(&nodes)
 	} else {
+		storageNodes := []plan.Node{}
+		if opts.Storage {
+			storageNodes = nodes.Worker
+		}
+
 		return makePlan(&plan.Plan{
 			AdminPassword:       generateAlphaNumericPassword(),
 			Etcd:                nodes.Etcd,
 			Master:              nodes.Master,
 			Worker:              nodes.Worker,
 			Ingress:             []plan.Node{nodes.Worker[0]},
+			Storage:             storageNodes,
 			MasterNodeFQDN:      nodes.Master[0].PublicIPv4,
 			MasterNodeShortName: nodes.Master[0].PrivateIPv4,
 			SSHKeyFile:          sshKey,

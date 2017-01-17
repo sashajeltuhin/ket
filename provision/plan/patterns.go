@@ -5,6 +5,7 @@ type Plan struct {
 	Master              []Node
 	Worker              []Node
 	Ingress             []Node
+	Storage             []Node
 	MasterNodeFQDN      string
 	MasterNodeShortName string
 	SSHUser             string
@@ -56,6 +57,12 @@ worker:
 ingress:
   expected_count: {{len .Ingress}}
   nodes:{{range .Ingress}}
+  - host: {{.Host}}
+    ip: {{.PublicIPv4}}
+    internalip: {{.PrivateIPv4}}{{end}}
+storage:
+  expected_count: {{len .Storage}}
+  nodes:{{range .Storage}}
   - host: {{.Host}}
     ip: {{.PublicIPv4}}
     internalip: {{.PrivateIPv4}}{{end}}

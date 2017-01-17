@@ -9,6 +9,7 @@ type packetOpts struct {
 	CentOS          bool
 	NoPlan          bool
 	Region          string
+	Storage         bool
 }
 
 // Cmd returns the command for managing Packet infrastructure
@@ -27,7 +28,6 @@ Optional:
   PACKET_SSH_KEY_PATH: The path to the SSH key to be used for accessing the machines.
     If empty, a file called "kismatic-packet.pem" in the current working directory is
     used as the SSH key.
-
 `,
 	}
 	cmd.AddCommand(createCmd())
