@@ -40,18 +40,19 @@ func MakeFileAskOnOverwrite(name string) (*os.File, error) {
 
 func AskForConfirmation(prompt string) bool {
 	fmt.Printf("%v  (y/N):", prompt)
-
 	var response string
-	_, err := fmt.Scanln(&response)
-
+	i, err := fmt.Scanln(&response)
 	if err != nil {
-		log.Fatal(err)
+		if i == 0 {
+			response = ""
+		} else {
+			log.Fatal(err)
+		}
 	}
-
 	okayResponseSet := MakeStringSet([]string{"y", "yes"})
+	nokayResponseSet := MakeStringSet([]string{"n", "no"})
 	response = strings.ToLower(response)
-
-	if len(response) == 0 {
+	if len(response) == 0 || StringSetContains(nokayResponseSet, response) {
 		return false
 	} else if StringSetContains(okayResponseSet, response) {
 		return true

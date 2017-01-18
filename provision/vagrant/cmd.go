@@ -45,10 +45,10 @@ func AddSharedFlags(cmd *cobra.Command, opts *VagrantCmdOpts) {
 	// (*cmd).Flags().StringVar(&opts.DockerRegistryCAPath, "dockerRegistryCAPath", "", "Absolute path to the CA that was used when starting your Docker registry. The docker daemons on all nodes in the cluster will be configured with this CA.")
 	(*cmd).Flags().StringVar(&opts.AdminPassword, "adminPassword", utils.GenerateAlphaNumericPassword(), "This password is used to login to the Kubernetes Dashboard and can also be used for administration without a security certificate")
 	opts.AdminPassword = utils.GenerateAlphaNumericPassword()
-	// (*cmd).Flags().StringVar(&opts.PodCIDR, "podCIDR", "172.168.16.0/16", "Kubernetes will assign pods IPs in this range. Do not use a range that is already in use on your local network!")
-	opts.PodCIDR = "172.168.16.0/16"
-	// (*cmd).Flags().StringVar(&opts.ServiceCIDR, "serviceCIDR", "172.168.17.0/16", "Kubernetes will assign services IPs in this range. Do not use a range that is already in use by your local network or pod network!")
-	opts.ServiceCIDR = "172.168.17.0/16"
+	// (*cmd).Flags().StringVar(&opts.PodCIDR, "podCIDR", "172.16.0.0/16", "Kubernetes will assign pods IPs in this range. Do not use a range that is already in use on your local network!")
+	opts.PodCIDR = "172.16.0.0/16"
+	// (*cmd).Flags().StringVar(&opts.ServiceCIDR, "serviceCIDR", "172.17.0.0/16", "Kubernetes will assign services IPs in this range. Do not use a range that is already in use by your local network or pod network!")
+	opts.ServiceCIDR = "172.17.0.0/16"
 	// VagrantCmdOpts
 	// (*cmd).Flags().BoolVar(&opts.OnlyGenerateVagrantfile, "onlyGenerateVagrantFile", false, "If present, forgoes performing `vagrant up` on the generated Vagrantfile")
 	(*cmd).Flags().BoolVar(&opts.NoPlan, "noplan", false, "If present, foregoes generating a plan file in this directory referencing the newly created nodes")
