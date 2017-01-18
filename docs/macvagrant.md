@@ -1,6 +1,8 @@
 # Using Mac and Vagrant
 
-## One-time Envionment Setup
+## Envionment Setup
+
+**Managing virtual machines is REALLY HARD**. This is why we use Vagrant. However, it's also why Vagrant and Virtualbox are constantly racing each other with features, simplifications, defects and stabilization. It's strongly urged that you update both fairly often and be prepared to back off a version if it doesn't work for your environment.
 
 1. Install a Vagrant compatible virtual-machine provider such as [VirtualBox](https://www.virtualbox.org/wiki/Downloads)
 2. Install (Vagrant)[https://www.vagrantup.com/docs/installation/]
@@ -13,7 +15,7 @@
 
 ## Make a new cluster
 
-6. <table><tr><td>`./provision vagrant create-mini`</td><td> *create a single virtual machinen instance kubernetes cluster.*</td></tr></table>
+6. <table><tr><td>`./provision vagrant create-mini`</td><td> *create a single virtual machine instance kubernetes cluster.*</td></tr></table>
 7. <table><tr><td>`./kismatic install apply -f kismatic-cluster.yaml`</td><td> *install Kubernetes*</td></tr></table>
 
 ## Tear it down when you're done with it
