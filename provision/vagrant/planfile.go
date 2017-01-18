@@ -56,6 +56,13 @@ func (p *Plan) Ingress() []NodeDetails {
 	return p.Infrastructure.nodesByType(Worker)[0:1]
 }
 
+func (p *Plan) Storage() []NodeDetails {
+	if p.Opts.Storage {
+		return p.Infrastructure.nodesByType(Worker)
+	}
+	return []NodeDetails{}
+}
+
 const planVagrantOverlay = `cluster:
   name: kubernetes
   admin_password: {{.Opts.AdminPassword}}      # This password is used to login to the Kubernetes Dashboard and can also be used for administration without a security certificate
@@ -97,6 +104,11 @@ worker:
 ingress:
   expected_count: {{len .Ingress}}
   nodes:{{range .Ingress}}
+  - host: {{.Name}}
+    ip: {{.IP.String}}{{end}}
+storage:
+  expected_count: {{len .Storage}}
+  nodes:{{range .Storage}}
   - host: {{.Name}}
     ip: {{.IP.String}}{{end}}
 `

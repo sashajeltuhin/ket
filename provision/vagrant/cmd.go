@@ -52,6 +52,7 @@ func AddSharedFlags(cmd *cobra.Command, opts *VagrantCmdOpts) {
 	// VagrantCmdOpts
 	// (*cmd).Flags().BoolVar(&opts.OnlyGenerateVagrantfile, "onlyGenerateVagrantFile", false, "If present, forgoes performing `vagrant up` on the generated Vagrantfile")
 	(*cmd).Flags().BoolVar(&opts.NoPlan, "noplan", false, "If present, foregoes generating a plan file in this directory referencing the newly created nodes")
+	(*cmd).Flags().BoolVarP(&opts.Storage, "storage-cluster", "s", false, "Create a storage cluster from all Worker nodes.")
 }
 
 func VagrantCreateCmd() *cobra.Command {

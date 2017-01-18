@@ -35,6 +35,7 @@ type InfrastructureOpts struct {
 	Redhat            bool
 	PrivateSSHKeyPath string
 	Vagrantfile       string
+	Storage           bool
 }
 
 type NodeDetails struct {
