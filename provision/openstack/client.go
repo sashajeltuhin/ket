@@ -161,7 +161,6 @@ func (c *Client) buildNode(auth Auth, conf Config, nodeData serverData, nodeType
 	if parseErr != nil {
 		return "", fmt.Errorf("Error with server data format: %v", parseErr)
 	}
-	fmt.Println("Node data", string(jsonStr))
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
 	req.Header.Set("X-Auth-Token", token)
 	req.Header.Set("Content-Type", "application/json")
@@ -184,7 +183,6 @@ func (c *Client) buildNode(auth Auth, conf Config, nodeData serverData, nodeType
 	fmt.Println("response Headers:", resp.Header)
 
 	body, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println("About to parse body ", string(body))
 
 	if isValidJSON(string(body)) == false {
 		return "", errors.New("Not a valid JSON response: " + string(body))

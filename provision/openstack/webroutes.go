@@ -8,7 +8,16 @@ import (
 )
 
 func ProvisionAndInstall(w http.ResponseWriter, r *http.Request) {
+	//get the post data with credentials and setting
+	var auth Auth
+	var conf Config
+	var nodeData serverData
+	//kick off all the requested nodes
 
+	var _, err = buildNode(auth, conf, nodeData, "etcd")
+	if err != nil {
+		log.Println("Error instantiating Openstack client", err)
+	}
 }
 
 func NodeUp(w http.ResponseWriter, r *http.Request) {
@@ -29,4 +38,12 @@ func NodeUp(w http.ResponseWriter, r *http.Request) {
 	//		panic(err)
 	//	}
 	//	defer req.Body.Close()
+}
+
+func canStartKetInstall() bool {
+	return false
+}
+
+func startInstall() {
+
 }
