@@ -120,7 +120,10 @@ func (c *Client) login(a Auth, conf Config) (string, error) {
 
 	c.Token = jsonParsed.Path("access.token.id").String()
 	c.Token = s.Trim(c.Token, "\"")
-	c.Expires, _ = time.Parse(time.RFC822, jsonParsed.Path("access.token.expires").String())
+	var exp string = jsonParsed.Path("access.token.expires").String()
+	fmt.Println("Expiration", exp)
+	layout := "2006-01-02T15:04:05.000Z"
+	c.Expires, _ = time.Parse(layout, exp)
 	fmt.Println("login results:", c.Token)
 	credsJson, _ := json.Marshal(*c)
 	fmt.Println("Marshaled creds", string(credsJson))
@@ -170,7 +173,7 @@ func (c *Client) buildNode(auth Auth, conf Config, nodeData serverData, nodeType
 		Transport: &tr,
 		Timeout:   30 * time.Second,
 	}
-	fmt.Printf("Posting create server command to url %s, req %v\n", url, req)
+
 	resp, err := client.Do(req)
 	if err != nil {
 		panic(err)

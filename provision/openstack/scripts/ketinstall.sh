@@ -43,7 +43,7 @@ echo "Get and install KET orchestrator service"
 echo "Configure KET user and download KET"
 useradd -d /home/kismaticuser -m kismaticuser
 echo "kismaticuser:$domainPass" | chpasswd
-echo "kismaticuser ALL = (root) NOPASSWD:ALL" | tee /etc/sudoers.d/kismaticuser
+echo "kismaticuser ALL = NOPASSWD:ALL" | tee /etc/sudoers.d/kismaticuser
 chmod 0440 /etc/sudoers.d/kismaticuser
 curl https://kismatic-packages-rpm.s3-accelerate.amazonaws.com/kismatic.repo -o /etc/yum.repos.d/kismatic.repo
 mkdir /ket
