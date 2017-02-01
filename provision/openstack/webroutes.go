@@ -1,6 +1,7 @@
 package openstack
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -8,16 +9,26 @@ import (
 )
 
 func ProvisionAndInstall(w http.ResponseWriter, r *http.Request) {
+	log.Printf("ProvisionAndInstall called")
 	//get the post data with credentials and setting
 	var auth Auth
-	var conf Config
-	var nodeData serverData
+	//	var conf Config
+	//	var nodeData serverData
+
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&auth)
+	if err != nil {
+		log.Printf("Error passing post data", err)
+	}
+
+	fmt.Println("Received", auth)
+	defer r.Body.Close()
 	//kick off all the requested nodes
 
-	var _, err = buildNode(auth, conf, nodeData, "etcd")
-	if err != nil {
-		log.Println("Error instantiating Openstack client", err)
-	}
+	//	var _, err = buildNode(auth, conf, nodeData, "etcd")
+	//	if err != nil {
+	//		log.Println("Error instantiating Openstack client", err)
+	//	}
 }
 
 func NodeUp(w http.ResponseWriter, r *http.Request) {
@@ -30,14 +41,6 @@ func NodeUp(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("Path index %d equal %s\n", i, s[i])
 	}
 
-	//post
-	//	decoder := json.NewDecoder(req.Body)
-	//	var t test_struct
-	//	err := decoder.Decode(&t)
-	//	if err != nil {
-	//		panic(err)
-	//	}
-	//	defer req.Body.Close()
 }
 
 func canStartKetInstall() bool {

@@ -2,6 +2,7 @@
 rootPass="^^rootPass^^"
 nodeName="^^nodeName^^"
 webPort="^^webPort^^"
+postData="^^postData^^"
 sed -i \"s/mirrorlist=https/mirrorlist=http/\" /etc/yum.repos.d/epel.repo
 yum check-update
 yum -y install wget libcgroup cifs-utils nano openssh-clients libcgroup-tools unzip iptables-services net-tools
@@ -57,8 +58,8 @@ ldconfig
 echo "Get and install KET orchestrator service"
 go get github.com/sashajeltuhin/ket/provision/exec/provision-web
 cd $GOPATH/src/github.com/sashajeltuhin/ket/provision/exec/provision-web
-
-
+docker build -t sashaz/ketinstall .
+docker run --name ket -p 8013:8013 sashaz/ketinstall 
 echo "Configure KET user and download KET"
 useradd -d /home/kismaticuser -m kismaticuser
 echo "kismaticuser:$domainPass" | chpasswd
@@ -78,5 +79,5 @@ chmod +x ./kubectl
 mv ./kubectl /usr/local/bin/kubectl
 #cp generated/kubeconfig -p $HOME/.kube/config
 
-#echo "Post to its own web server"
-#wget http://$ip:$webPort/provision --postdata $postData
+echo "Post to its own web server"
+wget http://$ip:$webPort/install --postdata $postData -o /tmp/appscale.log

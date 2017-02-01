@@ -2,6 +2,7 @@ package openstack
 
 import (
 	b64 "encoding/base64"
+	"encoding/json"
 	"fmt"
 	"strings"
 )
@@ -14,17 +15,23 @@ func GetClient(a Auth, conf Config) error {
 	return err
 }
 
-func prepNodeTemplate(auth Auth, conf Config, nodeType string) map[string]string {
+func prepNodeTemplate(auth Auth, conf Config, nodeType string) (map[string]string, error) {
 	var tokens map[string]string = make(map[string]string)
 	switch nodeType {
 	case "install":
+		jsonStr, parseErr := json.Marshal(auth)
+		if parseErr != nil {
+			return nil, parseErr
+		}
+		fmt.Printf("Auth formatted: %v\n", string(jsonStr))
 		tokens["webPort"] = "8013"
 		tokens["nodeName"] = "ketinstall"
 		tokens["rootPass"] = "@ppr3nda"
+		tokens["postData"] = string(jsonStr)
 		break
 	}
 
-	return tokens
+	return tokens, nil
 }
 
 func buildNode(auth Auth, conf Config, nodeData serverData, nodeType string) (string, error) {
@@ -41,7 +48,10 @@ func buildNode(auth Auth, conf Config, nodeData serverData, nodeType string) (st
 		return "", fmt.Errorf("Error downloading script %v", scriptErr)
 	}
 	scriptRaw := string(script)
-	tokens := prepNodeTemplate(auth, conf, nodeType)
+	tokens, parseErr := prepNodeTemplate(auth, conf, nodeType)
+	if parseErr != nil {
+		return "", parseErr
+	}
 	for key := range tokens {
 		tokenized := "^^" + key + "^^"
 		scriptRaw = strings.Replace(scriptRaw, tokenized, tokens[key], 1)
