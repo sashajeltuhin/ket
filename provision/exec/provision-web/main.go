@@ -10,8 +10,8 @@ import (
 
 func main() {
 	fmt.Println("Listening on port 8013")
-	http.HandleFunc("/nodeup/etcd", openstack.NodeUp)
-	http.HandleFunc("/nodeup/etcd", openstack.ProvisionAndInstall)
+	http.HandleFunc("/nodeup", openstack.NodeUp)
+	http.HandleFunc("/install", openstack.ProvisionAndInstall)
 	err := http.ListenAndServe(":8013", nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
