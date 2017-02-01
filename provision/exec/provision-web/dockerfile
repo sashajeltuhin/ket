@@ -1,0 +1,8 @@
+FROM     FROM golang
+RUN      apt-get install git-all
+RUN		 mkdir -p /go/src/github.com/sashajeltuhin
+WORKDIR /go/src/github.com/sashajeltuhin
+RUN 	git clone https://github.com/sashajeltuhin/KET.git
+RUN go install /go/src/github.com/sashajeltuhin/KET/provision/exec/provision-web
+EXPOSE	8013
+ENTRYPOINT /go/bin/provision-web

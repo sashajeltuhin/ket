@@ -15,10 +15,11 @@ import (
 )
 
 type Config struct {
-	urlauth    string
-	apiverauth string
-	urlcomp    string
-	apivercomp string
+	urlauth          string
+	apiverauth       string
+	urlcomp          string
+	apivercomp       string
+	installscriptURL string
 }
 
 // Credentials to be used for accessing the AI
@@ -218,23 +219,16 @@ func (c *Client) buildNode(auth Auth, conf Config, nodeData serverData, nodeType
 
 }
 
-func (c *Client) downloadInitScript(serverType string, url string) ([]byte, error) {
-	if url == "" {
-		switch serverType {
-		case "install":
-			url = "http://installs.apprendalabs.com/installscripts/ketinstall.sh"
-			break
-		}
-	}
+func (c *Client) downloadInitScript(url string) (string, error) {
 
 	// Get the data
 	resp, err := http.Get(url)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
 
-	return body, nil
+	return string(body), nil
 
 }

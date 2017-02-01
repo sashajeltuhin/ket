@@ -7,6 +7,10 @@ import (
 	"strings"
 )
 
+func ProvisionAndInstall(w http.ResponseWriter, r *http.Request) {
+
+}
+
 func NodeUp(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
 	log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
