@@ -38,7 +38,26 @@ EOF
 systemctl daemon-reload
 systemctl start docker
 systemctl enable docker
+
+echo "Install go"
+yum -y install golang
+mkdir -p /home/golang
+echo ‘export GOROOT=/usr/lib/golang
+export GOBIN=$GOROOT/bin
+export GOPATH=/home/golang
+export PATH=$PATH:$GOROOT/bin:$GOPATH/bin’ > /etc/profile.d/go.sh
+echo ‘# Golang Path
+export GOROOT=/usr/lib/golang
+export GOBIN=$GOROOT/bin
+export GOPATH=/home/golang
+export PATH=$PATH:$GOROOT/bin$GOPATH/bin’ >> ~/.bashrc
+source ~/.bashrc
+source /etc/profile
+ldconfig
 echo "Get and install KET orchestrator service"
+go get github.com/sashajeltuhin/ket/provision/exec/provision-web
+cd $GOPATH/src/github.com/sashajeltuhin/ket/provision/exec/provision-web
+
 
 echo "Configure KET user and download KET"
 useradd -d /home/kismaticuser -m kismaticuser
@@ -59,8 +78,5 @@ chmod +x ./kubectl
 mv ./kubectl /usr/local/bin/kubectl
 #cp generated/kubeconfig -p $HOME/.kube/config
 
-echo "My IP is $ip"
-
-docker run --name goempty --rm golang
 #echo "Post to its own web server"
 #wget http://$ip:$webPort/provision --postdata $postData
