@@ -56,7 +56,6 @@ func buildNode(auth Auth, conf Config, nodeData serverData, nodeType string) (st
 		tokenized := "^^" + key + "^^"
 		scriptRaw = strings.Replace(scriptRaw, tokenized, tokens[key], 1)
 	}
-	fmt.Printf("User Data", scriptRaw)
 	nodeData.Server.User_data = b64.StdEncoding.EncodeToString([]byte(scriptRaw))
 	var nodeID, err = c.buildNode(auth, conf, nodeData, nodeType)
 	if err != nil {

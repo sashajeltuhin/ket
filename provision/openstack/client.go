@@ -121,7 +121,7 @@ func (c *Client) login(a Auth, conf Config) (string, error) {
 	c.Token = jsonParsed.Path("access.token.id").String()
 	c.Token = s.Trim(c.Token, "\"")
 	var exp string = jsonParsed.Path("access.token.expires").String()
-	exp = s.Trim(c.Token, "\"")
+	exp = s.Trim(exp, "\"")
 	fmt.Println("Expiration", exp)
 	layout := "2006-01-02T15:04:05.000Z"
 	c.Expires, _ = time.Parse(layout, exp)

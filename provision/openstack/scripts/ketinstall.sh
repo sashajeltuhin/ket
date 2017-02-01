@@ -43,15 +43,15 @@ systemctl enable docker
 echo "Install go"
 yum -y install golang
 mkdir -p /home/golang
-echo ‘export GOROOT=/usr/lib/golang
-export GOBIN=$GOROOT/bin
-export GOPATH=/home/golang
-export PATH=$PATH:$GOROOT/bin:$GOPATH/bin’ > /etc/profile.d/go.sh
-echo ‘# Golang Path
-export GOROOT=/usr/lib/golang
-export GOBIN=$GOROOT/bin
-export GOPATH=/home/golang
-export PATH=$PATH:$GOROOT/bin$GOPATH/bin’ >> ~/.bashrc
+echo 'export GOROOT=/usr/lib/golang' >> /etc/profile.d/go.sh
+echo 'export GOBIN=$GOROOT/bin' >> /etc/profile.d/go.sh
+echo 'export GOPATH=/home/golang' >> /etc/profile.d/go.sh
+echo 'export PATH=$PATH:$GOROOT/bin:$GOPATH/bin' > /etc/profile.d/go.sh
+echo '# Golang Path' >> ~/.bashrc
+echo 'export GOROOT=/usr/lib/golang' >> ~/.bashrc
+echo 'export GOBIN=$GOROOT/bin' >> ~/.bashrc
+echo 'export GOPATH=/home/golang' >> ~/.bashrc
+echo 'export PATH=$PATH:$GOROOT/bin$GOPATH/bin' >> ~/.bashrc
 source ~/.bashrc
 source /etc/profile
 ldconfig
