@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/apprenda/kismatic-provision/provision/openstack"
+	"github.com/sashajeltuhin/ket/provision/openstack"
 )
 
 func main() {
