@@ -40,6 +40,9 @@ systemctl daemon-reload
 systemctl start docker
 systemctl enable docker
 
+echo "Install git"
+yum install -y git
+
 echo "Install go"
 yum -y install golang
 mkdir -p /home/golang
@@ -51,7 +54,7 @@ echo '# Golang Path' >> ~/.bashrc
 echo 'export GOROOT=/usr/lib/golang' >> ~/.bashrc
 echo 'export GOBIN=$GOROOT/bin' >> ~/.bashrc
 echo 'export GOPATH=/home/golang' >> ~/.bashrc
-echo 'export PATH=$PATH:$GOROOT/bin$GOPATH/bin' >> ~/.bashrc
+echo 'export PATH=$PATH:$GOROOT/bin:$GOPATH/bin' >> ~/.bashrc
 source ~/.bashrc
 source /etc/profile
 ldconfig
@@ -59,7 +62,7 @@ echo "Get and install KET orchestrator service"
 go get github.com/sashajeltuhin/ket/provision/exec/provision-web
 cd $GOPATH/src/github.com/sashajeltuhin/ket/provision/exec/provision-web
 docker build -t sashaz/ketinstall .
-docker run --name ket -p 8013:8013 sashaz/ketinstall 
+docker run -d --name ket -p 8013:8013 sashaz/ketinstall 
 echo "Configure KET user and download KET"
 useradd -d /home/kismaticuser -m kismaticuser
 echo "kismaticuser:$domainPass" | chpasswd
