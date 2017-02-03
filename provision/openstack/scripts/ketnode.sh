@@ -9,7 +9,7 @@ webIP="^^webIP^^"
 webPort="^^webPort^^"
 sed -i \"s/mirrorlist=https/mirrorlist=http/\" /etc/yum.repos.d/epel.repo
 yum check-update
-yum -y install wget libcgroup cifs-utils nano openssh-clients libcgroup-tools unzip iptables-services net-tools
+yum -y install wget libcgroup cifs-utils nano openssh-clients libcgroup-tools unzip iptables-services net-tools bind bind-utils
 service cgconfig start
 echo "root:$domainPass" | chpasswd
 echo "Updating hosts file"

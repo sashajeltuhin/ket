@@ -39,7 +39,7 @@ func ProvisionAndInstall(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println("Error reading body", err)
 	}
-	log.Println("Body", bodyData)
+	log.Println("Body", string(bodyData))
 
 	//	decoder := json.NewDecoder(r.Body)
 	//	err := decoder.Decode(&bag)
@@ -112,11 +112,11 @@ func startInstall(opts KetOpts, nodes ProvisionedNodes) {
 }
 
 func addToDNS(dns string, domain string, suf string, ip string) {
-	cmd := "echo -e \"server " + dns + "\nupdate add " + domain + "." + suf + " 3600 A " + ip + "\nsend\n\" | nsupdate -v"
+	cmd := "echo -e \"server " + dns + "\\nupdate add " + domain + "." + suf + " 3600 A " + ip + "\\nsend\\n\" | nsupdate -v"
 	log.Println("Exec command dns", cmd)
 	out, err := exec.Command("sh", "-c", cmd).Output()
 	if err != nil {
-		log.Println("Error adding to DNS", out)
+		log.Println("Error adding to DNS", out, err)
 	}
 	log.Println("Add dns:", out)
 	//echo -e "server 10.0.0.1\nupdate add host.domain.nl 3600 A 10.0.0.2\nsend\n" | nsupdate -v

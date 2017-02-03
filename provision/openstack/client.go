@@ -70,7 +70,8 @@ func (c *Client) login(a Auth, conf Config) (string, error) {
 
 	var fileName = a.Body.Credentials.Username + ".token"
 	dat, readerr := ioutil.ReadFile(fileName)
-	if readerr != nil && dat != nil && len(dat) > 0 {
+	fmt.Println("Opened token file", len(dat), readerr)
+	if readerr == nil && dat != nil && len(dat) > 0 {
 		fmt.Printf("Opened token file with content %s", string(dat))
 		var savedCreds Client
 		deserr := json.Unmarshal(dat, savedCreds)
