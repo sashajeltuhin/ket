@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
@@ -9,7 +8,6 @@ import (
 )
 
 func main() {
-	fmt.Println("Listening on port 8013")
 	mux := http.NewServeMux()
 	mux.HandleFunc("/nodeup", openstack.NodeUp)
 	mux.HandleFunc("/install", openstack.ProvisionAndInstall)

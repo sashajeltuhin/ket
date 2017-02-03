@@ -1,8 +1,11 @@
 #!/bin/bash
 rootPass="^^rootPass^^"
 nodeName="^^nodeName^^"
+dcip="^^dcip^^"
+domainName="^^domainName^^"
+domainSuf="^^domainSuf^^"
 webPort="^^webPort^^"
-postData="^^postData^^"
+postData="'^^postData^^'"
 sed -i \"s/mirrorlist=https/mirrorlist=http/\" /etc/yum.repos.d/epel.repo
 yum check-update
 yum -y install wget libcgroup cifs-utils nano openssh-clients libcgroup-tools unzip iptables-services net-tools
@@ -19,6 +22,13 @@ sed -i 's/#\?\(RSAAuthentication\s*\).*$/\1 yes/' /etc/ssh/sshd_config
 sed -i 's/#\?\(PermitRootLogin\s*\).*$/\1 yes/' /etc/ssh/sshd_config
 sed -i 's/#\?\(PasswordAuthentication\s*\).*$/\1 yes/' /etc/ssh/sshd_config
 service sshd restart
+echo "Updating domain info in resolv.conf"
+cat > /etc/resolv.conf << EOF
+nameserver $dcip
+search $domainName.$domainSuf
+domain $domainName.$domainSuf
+EOF
+chattr +i /etc/resolv.conf
 echo "Installing Docker"
 tee /etc/yum.repos.d/docker.repo <<-'EOF'
 [dockerrepo]
@@ -51,7 +61,7 @@ go get github.com/sashajeltuhin/ket/provision/exec/provision-web
 cd $GOPATH/src/github.com/sashajeltuhin/ket/provision/exec/provision-web
 docker build -t sashaz/ketinstall .
 docker build -t sashaz/ketinstall .
-docker run -d --name ket -p 8013:8013 sashaz/ketinstall 
+docker run -d --name ket -p 8013:8013 -v /ket:/ket sashaz/ketinstall
 echo "Configure KET user and download KET"
 useradd -d /home/kismaticuser -m kismaticuser
 echo "kismaticuser:$domainPass" | chpasswd
@@ -72,4 +82,4 @@ mv ./kubectl /usr/local/bin/kubectl
 #cp generated/kubeconfig -p $HOME/.kube/config
 
 echo "Post to its own web server"
-wget http://$ip:$webPort/install --post-data $postData -o /tmp/appscale.log
+wget http://$ip:$webPort/install?ip=$ip --post-data $postData -o /tmp/appscale.log

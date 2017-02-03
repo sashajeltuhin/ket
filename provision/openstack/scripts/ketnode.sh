@@ -1,6 +1,9 @@
 #!/bin/bash
 rootPass="^^rootPass^^"
 nodeName="^^nodeName^^"
+dcip="^^dcip^^"
+domainName="^^domainName^^"
+domainSuf="^^domainSuf^^"
 nodeType="^^nodeType^^"
 webIP="^^webIP^^"
 webPort="^^webPort^^"
@@ -20,6 +23,14 @@ sed -i 's/#\?\(RSAAuthentication\s*\).*$/\1 yes/' /etc/ssh/sshd_config
 sed -i 's/#\?\(PermitRootLogin\s*\).*$/\1 yes/' /etc/ssh/sshd_config
 sed -i 's/#\?\(PasswordAuthentication\s*\).*$/\1 yes/' /etc/ssh/sshd_config
 service sshd restart
+echo "Updating domain info in resolv.conf"
+cat > /etc/resolv.conf << EOF
+nameserver $dcip
+search $domainName.$domainSuf
+domain $domainName.$domainSuf
+EOF
+chattr +i /etc/resolv.conf
+echo "Add kismatic user"
 useradd -d /home/kismaticuser -m kismaticuser
 echo "kismaticuser:$domainPass" | chpasswd
 echo "kismaticuser ALL = (root) NOPASSWD:ALL" | tee /etc/sudoers.d/kismaticuser

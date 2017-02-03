@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type OpenstackOpts struct {
+type KetOpts struct {
 	EtcdNodeCount   uint16
 	MasterNodeCount uint16
 	WorkerNodeCount uint16
@@ -18,6 +18,12 @@ type OpenstackOpts struct {
 	InstanceType    string
 	OS              string
 	Storage         bool
+	AdminPass       string
+	SSHUser         string
+	SSHFile         string
+	Domain          string
+	Suffix          string
+	DNSip           string
 }
 
 func Cmd() *cobra.Command {
@@ -51,7 +57,7 @@ Conditional: (These may be omitted if the -f flag is used)
 }
 
 func CreateCmd() *cobra.Command {
-	opts := OpenstackOpts{}
+	opts := KetOpts{}
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "Creates infrastructure for a new cluster. For now, only the US East region is supported.",
@@ -72,10 +78,16 @@ Smallish instances will be created with public IP addresses. The command will no
 	cmd.Flags().StringVarP(&opts.InstanceType, "instance-type-blueprint", "i", "small", "A blueprint of instance type(s). Current options: micro (all t2 micros), small (t2 micros, workers are t2.medium), beefy (M4.large and xlarge)")
 	cmd.Flags().StringVarP(&opts.OS, "operating-system", "o", "ubuntu", "Which flavor of Linux to provision. Try ubuntu, centos or rhel.")
 	cmd.Flags().BoolVarP(&opts.Storage, "storage-cluster", "s", false, "Create a storage cluster from all Worker nodes.")
+	cmd.Flags().StringVarP(&opts.AdminPass, "admin-pass", "ap", "@ppr3nda", "Admin password")
+	cmd.Flags().StringVarP(&opts.SSHUser, "ssh-user", "sshu", "kismatic", "SSH User")
+	cmd.Flags().StringVarP(&opts.SSHFile, "ssh-file", "sshf", "/ket/kismaticuser.key", "SSH File")
+	cmd.Flags().StringVarP(&opts.Domain, "domain", "d", "ket", "Domain name")
+	cmd.Flags().StringVarP(&opts.Domain, "suffix", "suf", "local", "Domain suffix")
+	cmd.Flags().StringVarP(&opts.DNSip, "dns-ip", "dns", "10.20.50.175", "Domain IP")
 
 	return cmd
 }
-func makeInfra(opts OpenstackOpts) error {
+func makeInfra(opts KetOpts) error {
 
 	fmt.Print("Provisioning")
 	var a Auth
@@ -95,9 +107,9 @@ func makeInfra(opts OpenstackOpts) error {
 	n.Uuid = "22e1a428-74a3-4fc1-bd5c-41e10b8ff617"
 	server.Server.Networks = append(server.Server.Networks, n)
 	var sec secgroup
-	sec.Name = "apprenda"
+	sec.Name = "ket"
 	server.Server.Security_groups = append(server.Server.Security_groups, sec)
-	var nodeID, err = buildNode(a, conf, server, "install")
+	var nodeID, err = buildNode(a, conf, server, opts, "install")
 
 	if err != nil {
 		fmt.Print("Error instantiating Openstack client", err)

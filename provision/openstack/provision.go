@@ -7,6 +7,12 @@ import (
 	"strings"
 )
 
+type KetBag struct {
+	Auth   Auth
+	Config Config
+	Opts   KetOpts
+}
+
 func GetClient(a Auth, conf Config) error {
 
 	c := Client{}
@@ -15,17 +21,21 @@ func GetClient(a Auth, conf Config) error {
 	return err
 }
 
-func prepNodeTemplate(auth Auth, conf Config, nodeData serverData, nodeType string) (map[string]string, error) {
+func prepNodeTemplate(auth Auth, conf Config, nodeData serverData, opts KetOpts, nodeType string) (map[string]string, error) {
 	var tokens map[string]string = make(map[string]string)
+	bag := KetBag{Auth: auth, Config: conf}
 	switch nodeType {
 	case "install":
-		jsonStr, parseErr := json.Marshal(auth)
+		jsonStr, parseErr := json.Marshal(bag)
 		if parseErr != nil {
 			return nil, parseErr
 		}
 		fmt.Printf("Auth formatted: %v\n", string(jsonStr))
 		tokens["webPort"] = nodeData.Server.Name
-		tokens["rootPass"] = "@ppr3nda"
+		tokens["dcip"] = opts.DNSip
+		tokens["domainName"] = opts.Domain
+		tokens["domainSuf"] = opts.Suffix
+		tokens["rootPass"] = opts.AdminPass
 		tokens["postData"] = string(jsonStr)
 		break
 	}
@@ -33,7 +43,7 @@ func prepNodeTemplate(auth Auth, conf Config, nodeData serverData, nodeType stri
 	return tokens, nil
 }
 
-func buildNode(auth Auth, conf Config, nodeData serverData, nodeType string) (string, error) {
+func buildNode(auth Auth, conf Config, nodeData serverData, opts KetOpts, nodeType string) (string, error) {
 	c := Client{}
 	if conf.installscriptURL == "" {
 		switch nodeType {
@@ -47,7 +57,7 @@ func buildNode(auth Auth, conf Config, nodeData serverData, nodeType string) (st
 		return "", fmt.Errorf("Error downloading script %v", scriptErr)
 	}
 	scriptRaw := string(script)
-	tokens, parseErr := prepNodeTemplate(auth, conf, nodeData, nodeType)
+	tokens, parseErr := prepNodeTemplate(auth, conf, nodeData, opts, nodeType)
 	if parseErr != nil {
 		return "", parseErr
 	}
