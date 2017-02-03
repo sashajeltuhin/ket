@@ -24,4 +24,4 @@ useradd -d /home/kismaticuser -m kismaticuser
 echo "kismaticuser:$domainPass" | chpasswd
 echo "kismaticuser ALL = (root) NOPASSWD:ALL" | tee /etc/sudoers.d/kismaticuser
 chmod 0440 /etc/sudoers.d/kismaticuser
-wget http://$webIP:$webPort/nodeup/$nodeType/$ip -o /tmp/appscale.log
+wget http://$webIP:$webPort/nodeup?type=$nodeType&ip=$ip&name=$nodeName -o /tmp/appscale.log

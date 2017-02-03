@@ -15,7 +15,7 @@ func GetClient(a Auth, conf Config) error {
 	return err
 }
 
-func prepNodeTemplate(auth Auth, conf Config, nodeType string) (map[string]string, error) {
+func prepNodeTemplate(auth Auth, conf Config, nodeData serverData, nodeType string) (map[string]string, error) {
 	var tokens map[string]string = make(map[string]string)
 	switch nodeType {
 	case "install":
@@ -24,8 +24,7 @@ func prepNodeTemplate(auth Auth, conf Config, nodeType string) (map[string]strin
 			return nil, parseErr
 		}
 		fmt.Printf("Auth formatted: %v\n", string(jsonStr))
-		tokens["webPort"] = "8013"
-		tokens["nodeName"] = "ketinstall"
+		tokens["webPort"] = nodeData.Server.Name
 		tokens["rootPass"] = "@ppr3nda"
 		tokens["postData"] = string(jsonStr)
 		break
@@ -48,7 +47,7 @@ func buildNode(auth Auth, conf Config, nodeData serverData, nodeType string) (st
 		return "", fmt.Errorf("Error downloading script %v", scriptErr)
 	}
 	scriptRaw := string(script)
-	tokens, parseErr := prepNodeTemplate(auth, conf, nodeType)
+	tokens, parseErr := prepNodeTemplate(auth, conf, nodeData, nodeType)
 	if parseErr != nil {
 		return "", parseErr
 	}

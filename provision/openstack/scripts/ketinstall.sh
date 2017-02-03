@@ -29,13 +29,6 @@ gpgcheck=1
 gpgkey=https://yum.dockerproject.org/gpg
 EOF
 yum install -y http://yum.dockerproject.org/repo/main/centos/7/Packages/docker-engine-1.11.1-1.el7.centos.x86_64.rpm
-mkdir /etc/systemd/system/docker.service.d
-touch /etc/systemd/system/docker.service.d/docker.conf
-cat > /etc/systemd/system/docker.service.d/docker.conf << EOF
-[Service]
-ExecStart=
-ExecStart=/usr/bin/docker daemon -H fd:// --exec-opt native.cgroupdriver=systemd
-EOF
 systemctl daemon-reload
 systemctl start docker
 systemctl enable docker
@@ -44,23 +37,19 @@ echo "Install git"
 yum install -y git
 
 echo "Install go"
-yum -y install golang
-mkdir -p /home/golang
-echo 'export GOROOT=/usr/lib/golang' >> /etc/profile.d/go.sh
-echo 'export GOBIN=$GOROOT/bin' >> /etc/profile.d/go.sh
-echo 'export GOPATH=/home/golang' >> /etc/profile.d/go.sh
-echo 'export PATH=$PATH:$GOROOT/bin:$GOPATH/bin' > /etc/profile.d/go.sh
-echo '# Golang Path' >> ~/.bashrc
-echo 'export GOROOT=/usr/lib/golang' >> ~/.bashrc
-echo 'export GOBIN=$GOROOT/bin' >> ~/.bashrc
-echo 'export GOPATH=/home/golang' >> ~/.bashrc
-echo 'export PATH=$PATH:$GOROOT/bin:$GOPATH/bin' >> ~/.bashrc
-source ~/.bashrc
-source /etc/profile
-ldconfig
+cd /tmp
+curl -LO https://storage.googleapis.com/golang/go1.7.linux-amd64.tar.gz
+tar -C /usr/local -xvzf go1.7.linux-amd64.tar.gz
+mkdir -p ~/webket/{bin,pkg,src}
+touch /etc/profile.d/path.sh
+echo "export PATH=$PATH:/usr/local/go/bin" > /etc/profile.d/path.sh
+echo 'export GOBIN="$HOME/webket/bin"' >> ~/.bash_profile
+echo 'export GOPATH="$HOME/webket/src"' >> ~/.bash_profile
+source /etc/profile && source ~/.bash_profile
 echo "Get and install KET orchestrator service"
 go get github.com/sashajeltuhin/ket/provision/exec/provision-web
 cd $GOPATH/src/github.com/sashajeltuhin/ket/provision/exec/provision-web
+docker build -t sashaz/ketinstall .
 docker build -t sashaz/ketinstall .
 docker run -d --name ket -p 8013:8013 sashaz/ketinstall 
 echo "Configure KET user and download KET"
@@ -83,4 +72,4 @@ mv ./kubectl /usr/local/bin/kubectl
 #cp generated/kubeconfig -p $HOME/.kube/config
 
 echo "Post to its own web server"
-wget http://$ip:$webPort/install --postdata $postData -o /tmp/appscale.log
+wget http://$ip:$webPort/install --post-data $postData -o /tmp/appscale.log

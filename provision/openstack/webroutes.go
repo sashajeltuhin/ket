@@ -5,8 +5,16 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
+	"net/url"
 )
+
+type NodeMeta struct {
+	Num int16
+}
+
+type AppContext struct {
+	M map[string]NodeMeta
+}
 
 func ProvisionAndInstall(w http.ResponseWriter, r *http.Request) {
 	log.Printf("ProvisionAndInstall called")
@@ -32,14 +40,13 @@ func ProvisionAndInstall(w http.ResponseWriter, r *http.Request) {
 }
 
 func NodeUp(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
-	log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
-	fmt.Println("Path", r.URL.Path)
-	var path = strings.Trim(r.URL.Path, "/")
-	s := strings.Split(path, "/")
-	for i := 0; i < len(s); i++ {
-		fmt.Printf("Path index %d equal %s\n", i, s[i])
-	}
+	fmt.Println(r.URL.RawQuery)
+	q, _ := url.ParseQuery(r.URL.RawQuery)
+	//nodetype
+	nodeType := q["type"][0]
+	nodeIP := q["ip"][0]
+	nodeName := q["nodeName"][0]
+	fmt.Printf("Nodetype=%s nodeip=%s nodeName=%s", nodeType, nodeIP, nodeName)
 
 }
 
