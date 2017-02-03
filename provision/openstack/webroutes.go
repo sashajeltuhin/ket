@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -34,12 +35,17 @@ func ProvisionAndInstall(w http.ResponseWriter, r *http.Request) {
 	bag := KetBag{}
 	//	var conf Config
 	//	var nodeData serverData
-
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&bag)
+	bodyData, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Printf("Error passing post data", err)
+		log.Println("Error reading body", err)
 	}
+	log.Println("Body", bodyData)
+
+	//	decoder := json.NewDecoder(r.Body)
+	//	err := decoder.Decode(&bag)
+	//	if err != nil {
+	//		log.Printf("Error passing post data", err)
+	//	}
 
 	fmt.Println("Received", bag)
 	defer r.Body.Close()
@@ -49,7 +55,7 @@ func ProvisionAndInstall(w http.ResponseWriter, r *http.Request) {
 	nodes.Master = append(nodes.Master, KetNode{ID: "1", PublicIPv4: "10.20.50.1", PrivateIPv4: "10.20.50.1", SSHUser: bag.Opts.SSHUser})
 	nodes.Worker = append(nodes.Worker, KetNode{ID: "1", PublicIPv4: "10.20.50.1", PrivateIPv4: "10.20.50.1", SSHUser: bag.Opts.SSHUser})
 	startInstall(bag.Opts, nodes)
-	addToDNS(bag.Opts.DNSip, bag.Opts.Domain, bag.Opts.Suffix, ip)
+	addToDNS("10.20.50.175", "ket", "local", ip)
 	//kick off all the requested nodes
 
 	//	var _, err = buildNode(auth, conf, nodeData, "etcd")

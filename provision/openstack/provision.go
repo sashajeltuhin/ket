@@ -37,7 +37,7 @@ func prepNodeTemplate(auth Auth, conf Config, nodeData serverData, opts KetOpts,
 		tokens["domainName"] = opts.Domain
 		tokens["domainSuf"] = opts.Suffix
 		tokens["rootPass"] = opts.AdminPass
-		tokens["postData"] = string(jsonStr)
+		tokens["postData"] = b64.StdEncoding.EncodeToString([]byte(jsonStr))
 		break
 	}
 

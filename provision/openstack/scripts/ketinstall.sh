@@ -6,6 +6,7 @@ domainName="^^domainName^^"
 domainSuf="^^domainSuf^^"
 webPort="^^webPort^^"
 postData="'^^postData^^'"
+echo $postData
 sed -i \"s/mirrorlist=https/mirrorlist=http/\" /etc/yum.repos.d/epel.repo
 yum check-update
 yum -y install wget libcgroup cifs-utils nano openssh-clients libcgroup-tools unzip iptables-services net-tools

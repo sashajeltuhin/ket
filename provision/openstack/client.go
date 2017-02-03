@@ -74,10 +74,12 @@ func (c *Client) login(a Auth, conf Config) (string, error) {
 		fmt.Printf("Opened token file with content %s", string(dat))
 		var savedCreds Client
 		deserr := json.Unmarshal(dat, savedCreds)
-		if deserr != nil {
+		if deserr == nil {
 			now := time.Now()
 			exptime := savedCreds.Expires
+			fmt.Println("About to use time", exptime)
 			if now.Before(exptime) {
+				fmt.Println("Will use old token", c.Token)
 				return c.Token, nil
 			}
 		}
