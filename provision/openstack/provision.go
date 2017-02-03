@@ -23,7 +23,7 @@ func GetClient(a Auth, conf Config) error {
 
 func prepNodeTemplate(auth Auth, conf Config, nodeData serverData, opts KetOpts, nodeType string) (map[string]string, error) {
 	var tokens map[string]string = make(map[string]string)
-	bag := KetBag{Auth: auth, Config: conf}
+	bag := KetBag{Auth: auth, Config: conf, Opts: opts}
 	switch nodeType {
 	case "install":
 		jsonStr, parseErr := json.Marshal(bag)
@@ -31,7 +31,8 @@ func prepNodeTemplate(auth Auth, conf Config, nodeData serverData, opts KetOpts,
 			return nil, parseErr
 		}
 		fmt.Printf("Auth formatted: %v\n", string(jsonStr))
-		tokens["webPort"] = nodeData.Server.Name
+		tokens["nodeName"] = nodeData.Server.Name
+		tokens["webPort"] = "8013"
 		tokens["dcip"] = opts.DNSip
 		tokens["domainName"] = opts.Domain
 		tokens["domainSuf"] = opts.Suffix
@@ -45,14 +46,14 @@ func prepNodeTemplate(auth Auth, conf Config, nodeData serverData, opts KetOpts,
 
 func buildNode(auth Auth, conf Config, nodeData serverData, opts KetOpts, nodeType string) (string, error) {
 	c := Client{}
-	if conf.installscriptURL == "" {
+	if conf.InstallscriptURL == "" {
 		switch nodeType {
 		case "install":
-			conf.installscriptURL = "https://raw.githubusercontent.com/sashajeltuhin/ket/master/provision/openstack/scripts/ketinstall.sh"
+			conf.InstallscriptURL = "https://raw.githubusercontent.com/sashajeltuhin/ket/master/provision/openstack/scripts/ketinstall.sh"
 			break
 		}
 	}
-	var script, scriptErr = c.downloadInitScript(conf.installscriptURL)
+	var script, scriptErr = c.downloadInitScript(conf.InstallscriptURL)
 	if scriptErr != nil {
 		return "", fmt.Errorf("Error downloading script %v", scriptErr)
 	}

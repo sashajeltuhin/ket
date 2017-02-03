@@ -15,11 +15,11 @@ import (
 )
 
 type Config struct {
-	urlauth          string
-	apiverauth       string
-	urlcomp          string
-	apivercomp       string
-	installscriptURL string
+	Urlauth          string
+	Apiverauth       string
+	Urlcomp          string
+	Apivercomp       string
+	InstallscriptURL string
 }
 
 // Credentials to be used for accessing the AI
@@ -85,7 +85,7 @@ func (c *Client) login(a Auth, conf Config) (string, error) {
 
 	fmt.Errorf("Token file %s does not exist ", fileName)
 
-	url := conf.urlauth + conf.apiverauth + "/tokens"
+	url := conf.Urlauth + conf.Apiverauth + "/tokens"
 	fmt.Println("Openstack URL:>", url)
 
 	jsonStr, parseErr := json.Marshal(a)
@@ -155,7 +155,7 @@ func (c *Client) buildNode(auth Auth, conf Config, nodeData serverData, nodeType
 		return "", fmt.Errorf("Error with auth: %v", err)
 	}
 
-	var url = conf.urlcomp + conf.apivercomp + "/" + auth.Body.Tenant + "/servers"
+	var url = conf.Urlcomp + conf.Apivercomp + "/" + auth.Body.Tenant + "/servers"
 
 	fmt.Println("After login returned with token", token)
 

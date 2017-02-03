@@ -78,28 +78,28 @@ Smallish instances will be created with public IP addresses. The command will no
 	cmd.Flags().StringVarP(&opts.InstanceType, "instance-type-blueprint", "i", "small", "A blueprint of instance type(s). Current options: micro (all t2 micros), small (t2 micros, workers are t2.medium), beefy (M4.large and xlarge)")
 	cmd.Flags().StringVarP(&opts.OS, "operating-system", "o", "ubuntu", "Which flavor of Linux to provision. Try ubuntu, centos or rhel.")
 	cmd.Flags().BoolVarP(&opts.Storage, "storage-cluster", "s", false, "Create a storage cluster from all Worker nodes.")
-	cmd.Flags().StringVarP(&opts.AdminPass, "admin-pass", "ap", "@ppr3nda", "Admin password")
-	cmd.Flags().StringVarP(&opts.SSHUser, "ssh-user", "sshu", "kismatic", "SSH User")
-	cmd.Flags().StringVarP(&opts.SSHFile, "ssh-file", "sshf", "/ket/kismaticuser.key", "SSH File")
-	cmd.Flags().StringVarP(&opts.Domain, "domain", "d", "ket", "Domain name")
-	cmd.Flags().StringVarP(&opts.Domain, "suffix", "suf", "local", "Domain suffix")
-	cmd.Flags().StringVarP(&opts.DNSip, "dns-ip", "dns", "10.20.50.175", "Domain IP")
+	cmd.Flags().StringVarP(&opts.AdminPass, "admin-pass", "", "@ppr3nda", "Admin password")
+	cmd.Flags().StringVarP(&opts.SSHUser, "ssh-user", "", "kismatic", "SSH User")
+	cmd.Flags().StringVarP(&opts.SSHFile, "ssh-file", "", "/ket/kismaticuser.key", "SSH File")
+	cmd.Flags().StringVarP(&opts.Domain, "domain", "", "ket", "Domain name")
+	cmd.Flags().StringVarP(&opts.Suffix, "suffix", "", "local", "Domain suffix")
+	cmd.Flags().StringVarP(&opts.DNSip, "dns-ip", "", "10.20.50.175", "Domain IP")
 
 	return cmd
 }
 func makeInfra(opts KetOpts) error {
 
-	fmt.Print("Provisioning")
+	fmt.Print("Provisioning with options", opts)
 	var a Auth
 	a.Body.Credentials.Password = "@ppr3nda"
 	a.Body.Credentials.Username = "sasha"
 	a.Body.Tenant = "f4ec4723e8a541d68ef993b47ef75c94"
 	var conf Config
-	conf.urlauth = "https://api-trial6.client.metacloud.net:5000/"
-	conf.apiverauth = "v2.0"
+	conf.Urlauth = "https://api-trial6.client.metacloud.net:5000/"
+	conf.Apiverauth = "v2.0"
 	var server serverData
-	conf.urlcomp = "https://api-trial6.client.metacloud.net:8774/"
-	conf.apivercomp = "v2"
+	conf.Urlcomp = "https://api-trial6.client.metacloud.net:8774/"
+	conf.Apivercomp = "v2"
 	server.Server.Name = "ketautoinst"
 	server.Server.ImageRef = "177663bc-0c5e-43b3-99d8-7a457ae4f085"
 	server.Server.FlavorRef = "f2c96d12-5454-450c-9ae6-177c4d82eaf3"
