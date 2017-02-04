@@ -79,8 +79,9 @@ func (c *Client) login(a Auth, conf Config) (string, error) {
 		if deserr == nil {
 			now := time.Now()
 			exptime := savedCreds.Expires
-			fmt.Println("About to use time", exptime)
+			fmt.Println("Checking expiration", exptime)
 			if now.Before(exptime) {
+				c.Token = savedCreds.Token
 				fmt.Println("Will use old token", c.Token)
 				return c.Token, nil
 			}
