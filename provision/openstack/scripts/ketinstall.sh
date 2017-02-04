@@ -5,7 +5,7 @@ dcip="^^dcip^^"
 domainName="^^domainName^^"
 domainSuf="^^domainSuf^^"
 webPort="^^webPort^^"
-postData="'^^postData^^'"
+postData="^^postData^^"
 echo $postData
 sed -i \"s/mirrorlist=https/mirrorlist=http/\" /etc/yum.repos.d/epel.repo
 yum check-update

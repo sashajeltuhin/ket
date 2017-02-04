@@ -2,6 +2,7 @@ package openstack
 
 import (
 	"bufio"
+	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -41,13 +42,22 @@ func ProvisionAndInstall(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Println("Body", string(bodyData))
 
+	decoded, decerr := b64.StdEncoding.DecodeString(string(bodyData))
+	if decerr != nil {
+		log.Println("Something wrong with the post data 64bit encoding", decerr)
+	}
 	//	decoder := json.NewDecoder(r.Body)
 	//	err := decoder.Decode(&bag)
 	//	if err != nil {
 	//		log.Printf("Error passing post data", err)
 	//	}
 
-	fmt.Println("Received", bag)
+	fmt.Println("decoded", decoded)
+	unmarshErr := json.Unmarshal(decoded, bag)
+	if unmarshErr != nil {
+		log.Println("Cannot deserialize ket bag", unmarshErr)
+	}
+	fmt.Println("Bag", bag)
 	defer r.Body.Close()
 	en := KetNode{ID: "1", PublicIPv4: "10.20.50.1", PrivateIPv4: "10.20.50.1", SSHUser: bag.Opts.SSHUser}
 	nodes := ProvisionedNodes{}
@@ -55,7 +65,7 @@ func ProvisionAndInstall(w http.ResponseWriter, r *http.Request) {
 	nodes.Master = append(nodes.Master, KetNode{ID: "1", PublicIPv4: "10.20.50.1", PrivateIPv4: "10.20.50.1", SSHUser: bag.Opts.SSHUser})
 	nodes.Worker = append(nodes.Worker, KetNode{ID: "1", PublicIPv4: "10.20.50.1", PrivateIPv4: "10.20.50.1", SSHUser: bag.Opts.SSHUser})
 	startInstall(bag.Opts, nodes)
-	addToDNS("10.20.50.175", "ket", "local", ip)
+	addToDNS("10.20.50.175", "ketautoinst", "ket", "local", ip)
 	//kick off all the requested nodes
 
 	//	var _, err = buildNode(auth, conf, nodeData, "etcd")
@@ -111,8 +121,8 @@ func startInstall(opts KetOpts, nodes ProvisionedNodes) {
 	}
 }
 
-func addToDNS(dns string, domain string, suf string, ip string) {
-	cmd := "echo -e \"server " + dns + "\\nupdate add " + domain + "." + suf + " 3600 A " + ip + "\\nsend\\n\" | nsupdate -v"
+func addToDNS(dns string, serverName string, domain string, suf string, ip string) {
+	cmd := "echo -e \"server " + dns + "\\nupdate add " + serverName + "." + domain + "." + suf + " 3600 A " + ip + "\\nsend\\n\" | nsupdate -v"
 	log.Println("Exec command dns", cmd)
 	out, err := exec.Command("sh", "-c", cmd).Output()
 	if err != nil {
