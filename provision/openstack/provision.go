@@ -8,9 +8,10 @@ import (
 )
 
 type KetBag struct {
-	Auth   Auth
-	Config Config
-	Opts   KetOpts
+	Auth      Auth
+	Config    Config
+	Opts      KetOpts
+	Installer KetNode
 }
 
 func GetClient(a Auth, conf Config) error {
@@ -23,7 +24,7 @@ func GetClient(a Auth, conf Config) error {
 
 func prepNodeTemplate(auth Auth, conf Config, nodeData serverData, opts KetOpts, nodeType string) (map[string]string, error) {
 	var tokens map[string]string = make(map[string]string)
-	bag := KetBag{Auth: auth, Config: conf, Opts: opts}
+	bag := KetBag{Auth: auth, Config: conf, Opts: opts, Installer: KetNode{Host: nodeData.Server.Name}}
 	switch nodeType {
 	case "install":
 		jsonStr, parseErr := json.Marshal(bag)
@@ -44,12 +45,30 @@ func prepNodeTemplate(auth Auth, conf Config, nodeData serverData, opts KetOpts,
 	return tokens, nil
 }
 
+func buildNodeData(name string, opts KetOpts) serverData {
+	var server serverData
+	server.Server.Name = name
+	server.Server.ImageRef = opts.Image
+	server.Server.FlavorRef = opts.Flavor
+	var n network
+	n.Uuid = opts.Network
+	server.Server.Networks = append(server.Server.Networks, n)
+	var sec secgroup
+	sec.Name = opts.SecGroup
+	server.Server.Security_groups = append(server.Server.Security_groups, sec)
+	return server
+}
+
 func buildNode(auth Auth, conf Config, nodeData serverData, opts KetOpts, nodeType string) (string, error) {
 	c := Client{}
 	if conf.InstallscriptURL == "" {
 		switch nodeType {
 		case "install":
 			conf.InstallscriptURL = "https://raw.githubusercontent.com/sashajeltuhin/ket/master/provision/openstack/scripts/ketinstall.sh"
+			break
+
+		default:
+			conf.InstallscriptURL = "https://raw.githubusercontent.com/sashajeltuhin/ket/master/provision/openstack/scripts/ketnode.sh"
 			break
 		}
 	}

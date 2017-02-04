@@ -24,6 +24,10 @@ type KetOpts struct {
 	Domain          string
 	Suffix          string
 	DNSip           string
+	Image           string
+	Flavor          string
+	Network         string
+	SecGroup        string
 }
 
 func Cmd() *cobra.Command {
@@ -84,6 +88,10 @@ Smallish instances will be created with public IP addresses. The command will no
 	cmd.Flags().StringVarP(&opts.Domain, "domain", "", "ket", "Domain name")
 	cmd.Flags().StringVarP(&opts.Suffix, "suffix", "", "local", "Domain suffix")
 	cmd.Flags().StringVarP(&opts.DNSip, "dns-ip", "", "10.20.50.175", "Domain IP")
+	cmd.Flags().StringVarP(&opts.Image, "image", "", "177663bc-0c5e-43b3-99d8-7a457ae4f085", "Preferred Image")
+	cmd.Flags().StringVarP(&opts.Flavor, "flavor", "", "f2c96d12-5454-450c-9ae6-177c4d82eaf3", "Preferred Flavor")
+	cmd.Flags().StringVarP(&opts.Network, "network", "", "22e1a428-74a3-4fc1-bd5c-41e10b8ff617", "Preferred Network")
+	cmd.Flags().StringVarP(&opts.SecGroup, "sec-grp", "", "ket", "Preferred Security Group")
 
 	return cmd
 }
@@ -97,18 +105,9 @@ func makeInfra(opts KetOpts) error {
 	var conf Config
 	conf.Urlauth = "https://api-trial6.client.metacloud.net:5000/"
 	conf.Apiverauth = "v2.0"
-	var server serverData
 	conf.Urlcomp = "https://api-trial6.client.metacloud.net:8774/"
 	conf.Apivercomp = "v2"
-	server.Server.Name = "ketautoinst"
-	server.Server.ImageRef = "177663bc-0c5e-43b3-99d8-7a457ae4f085"
-	server.Server.FlavorRef = "f2c96d12-5454-450c-9ae6-177c4d82eaf3"
-	var n network
-	n.Uuid = "22e1a428-74a3-4fc1-bd5c-41e10b8ff617"
-	server.Server.Networks = append(server.Server.Networks, n)
-	var sec secgroup
-	sec.Name = "ket"
-	server.Server.Security_groups = append(server.Server.Security_groups, sec)
+	server := buildNodeData("ketautoinstall", opts)
 	var nodeID, err = buildNode(a, conf, server, opts, "install")
 
 	if err != nil {

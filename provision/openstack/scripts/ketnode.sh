@@ -7,6 +7,7 @@ domainSuf="^^domainSuf^^"
 nodeType="^^nodeType^^"
 webIP="^^webIP^^"
 webPort="^^webPort^^"
+postData="^^postData^^"
 sed -i \"s/mirrorlist=https/mirrorlist=http/\" /etc/yum.repos.d/epel.repo
 yum check-update
 yum -y install wget libcgroup cifs-utils nano openssh-clients libcgroup-tools unzip iptables-services net-tools bind bind-utils
@@ -35,4 +36,4 @@ useradd -d /home/kismaticuser -m kismaticuser
 echo "kismaticuser:$domainPass" | chpasswd
 echo "kismaticuser ALL = (root) NOPASSWD:ALL" | tee /etc/sudoers.d/kismaticuser
 chmod 0440 /etc/sudoers.d/kismaticuser
-wget http://$webIP:$webPort/nodeup?type=$nodeType&ip=$ip&name=$nodeName -o /tmp/appscale.log
+wget http://$webIP:$webPort/nodeup?type=$nodeType&ip=$ip&name=$nodeName --post-data $postData -o /tmp/appscale.log
