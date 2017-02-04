@@ -53,7 +53,7 @@ func ProvisionAndInstall(w http.ResponseWriter, r *http.Request) {
 	//	}
 
 	fmt.Println("decoded", decoded)
-	unmarshErr := json.Unmarshal(decoded, bag)
+	unmarshErr := json.Unmarshal(decoded, &bag)
 	if unmarshErr != nil {
 		log.Println("Cannot deserialize ket bag", unmarshErr)
 	}

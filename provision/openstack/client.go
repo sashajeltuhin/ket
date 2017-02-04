@@ -75,7 +75,7 @@ func (c *Client) login(a Auth, conf Config) (string, error) {
 		fmt.Printf("Opened token file with content %s", string(dat))
 		var savedCreds Client
 		deserr := json.Unmarshal(dat, savedCreds)
-		fmt.Printf("Deserialized token file", deserr, savedCreds)
+		fmt.Printf("Deserialized token file", deserr, &savedCreds)
 		if deserr == nil {
 			now := time.Now()
 			exptime := savedCreds.Expires
