@@ -22,25 +22,26 @@ func GetClient(a Auth, conf Config) error {
 	return err
 }
 
-func prepNodeTemplate(auth Auth, conf Config, nodeData serverData, opts KetOpts, nodeType string) (map[string]string, error) {
+func prepNodeTemplate(auth Auth, conf Config, nodeData serverData, opts KetOpts, nodeType string, webIP string) (map[string]string, error) {
 	var tokens map[string]string = make(map[string]string)
 	bag := KetBag{Auth: auth, Config: conf, Opts: opts, Installer: KetNode{Host: nodeData.Server.Name}}
-	switch nodeType {
-	case "install":
-		jsonStr, parseErr := json.Marshal(bag)
-		if parseErr != nil {
-			return nil, parseErr
-		}
-		fmt.Printf("Auth formatted: %v\n", string(jsonStr))
-		tokens["nodeName"] = nodeData.Server.Name
-		tokens["webPort"] = "8013"
-		tokens["dcip"] = opts.DNSip
-		tokens["domainName"] = opts.Domain
-		tokens["domainSuf"] = opts.Suffix
-		tokens["rootPass"] = opts.AdminPass
-		tokens["postData"] = b64.StdEncoding.EncodeToString([]byte(jsonStr))
-		break
+
+	jsonStr, parseErr := json.Marshal(bag)
+	if parseErr != nil {
+		return nil, parseErr
 	}
+	fmt.Printf("Auth formatted: %v\n", string(jsonStr))
+	tokens["nodeName"] = nodeData.Server.Name
+	tokens["webPort"] = "8013"
+	tokens["dcip"] = opts.DNSip
+	tokens["domainName"] = opts.Domain
+	tokens["domainSuf"] = opts.Suffix
+	tokens["rootPass"] = opts.AdminPass
+	tokens["nodeType"] = nodeType
+	if webIP != "" {
+		tokens["webIP"] = webIP
+	}
+	tokens["postData"] = b64.StdEncoding.EncodeToString([]byte(jsonStr))
 
 	return tokens, nil
 }
@@ -59,7 +60,7 @@ func buildNodeData(name string, opts KetOpts) serverData {
 	return server
 }
 
-func buildNode(auth Auth, conf Config, nodeData serverData, opts KetOpts, nodeType string) (string, error) {
+func buildNode(auth Auth, conf Config, nodeData serverData, opts KetOpts, nodeType string, webIP string) (string, error) {
 	c := Client{}
 	if conf.InstallscriptURL == "" {
 		switch nodeType {
@@ -77,7 +78,7 @@ func buildNode(auth Auth, conf Config, nodeData serverData, opts KetOpts, nodeTy
 		return "", fmt.Errorf("Error downloading script %v", scriptErr)
 	}
 	scriptRaw := string(script)
-	tokens, parseErr := prepNodeTemplate(auth, conf, nodeData, opts, nodeType)
+	tokens, parseErr := prepNodeTemplate(auth, conf, nodeData, opts, nodeType, "")
 	if parseErr != nil {
 		return "", parseErr
 	}

@@ -66,15 +66,15 @@ func ProvisionAndInstall(w http.ResponseWriter, r *http.Request) {
 	addToDNS(bag.Opts.DNSip, bag.Installer.Host, bag.Opts.Domain, bag.Opts.Suffix, ip)
 	//kick off all the requested nodes
 
-	var _, erretcd = buildNode(bag.Auth, bag.Config, buildNodeData("ketautoetcd", bag.Opts), bag.Opts, "etcd")
+	var _, erretcd = buildNode(bag.Auth, bag.Config, buildNodeData("ketautoetcd", bag.Opts), bag.Opts, "etcd", ip)
 	if erretcd != nil {
 		log.Println("Error instantiating etcd node", erretcd)
 	}
-	var _, errMaster = buildNode(bag.Auth, bag.Config, buildNodeData("ketautomaster", bag.Opts), bag.Opts, "master")
+	var _, errMaster = buildNode(bag.Auth, bag.Config, buildNodeData("ketautomaster", bag.Opts), bag.Opts, "master", ip)
 	if errMaster != nil {
 		log.Println("Error instantiating master node", errMaster)
 	}
-	var _, errWorker = buildNode(bag.Auth, bag.Config, buildNodeData("ketautoworker", bag.Opts), bag.Opts, "worker")
+	var _, errWorker = buildNode(bag.Auth, bag.Config, buildNodeData("ketautoworker", bag.Opts), bag.Opts, "worker", ip)
 	if errWorker != nil {
 		log.Println("Error instantiating worker node", errWorker)
 	}

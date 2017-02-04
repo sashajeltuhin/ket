@@ -108,7 +108,7 @@ func makeInfra(opts KetOpts) error {
 	conf.Urlcomp = "https://api-trial6.client.metacloud.net:8774/"
 	conf.Apivercomp = "v2"
 	server := buildNodeData("ketautoinstall", opts)
-	var nodeID, err = buildNode(a, conf, server, opts, "install")
+	var nodeID, err = buildNode(a, conf, server, opts, "install", "")
 
 	if err != nil {
 		fmt.Print("Error instantiating Openstack client", err)
