@@ -63,8 +63,10 @@ func ProvisionAndInstall(w http.ResponseWriter, r *http.Request) {
 		log.Println("Body error", bodyErr)
 	}
 
-	addToDNS(bag.Opts.DNSip, bag.Installer.Host, bag.Opts.Domain, bag.Opts.Suffix, ip)
+	//	addToDNS(bag.Opts.DNSip, bag.Installer.Host, bag.Opts.Domain, bag.Opts.Suffix, ip)
 	//kick off all the requested nodes
+
+	bag.Config.InstallscriptURL = ""
 
 	var _, erretcd = buildNode(bag.Auth, bag.Config, buildNodeData("ketautoetcd", bag.Opts), bag.Opts, "etcd", ip)
 	if erretcd != nil {
@@ -81,6 +83,7 @@ func ProvisionAndInstall(w http.ResponseWriter, r *http.Request) {
 }
 
 func NodeUp(w http.ResponseWriter, r *http.Request) {
+	log.Println("Node Up called")
 	q := r.URL.Query()
 	fmt.Println("received", q)
 	nodeType := q["type"][0]
@@ -92,7 +95,7 @@ func NodeUp(w http.ResponseWriter, r *http.Request) {
 	if bodyErr != nil {
 		log.Println("Body error", bodyErr)
 	}
-	addToDNS(bag.Opts.DNSip, bag.Installer.Host, bag.Opts.Domain, bag.Opts.Suffix, nodeIP)
+	//	addToDNS(bag.Opts.DNSip, bag.Installer.Host, bag.Opts.Domain, bag.Opts.Suffix, nodeIP)
 
 	w.Header().Set("Content-Type", "application/json")
 	resp := Response{Status: "Received node"}

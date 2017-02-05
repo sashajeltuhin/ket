@@ -36,4 +36,5 @@ useradd -d /home/kismaticuser -m kismaticuser
 echo "kismaticuser:$domainPass" | chpasswd
 echo "kismaticuser ALL = (root) NOPASSWD:ALL" | tee /etc/sudoers.d/kismaticuser
 chmod 0440 /etc/sudoers.d/kismaticuser
+echo -e "server $dcip\nupdate add $nodeName.$domainName.$domainSuf 3600 A $ip\nsend\n" | nsupdate -v
 wget http://$webIP:$webPort/nodeup?type=$nodeType&ip=$ip&name=$nodeName --post-data $postData -o /tmp/appscale.log

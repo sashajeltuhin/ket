@@ -82,5 +82,7 @@ chmod +x ./kubectl
 mv ./kubectl /usr/local/bin/kubectl
 #cp generated/kubeconfig -p $HOME/.kube/config
 
+echo -e "server $dcip\nupdate add $nodeName.$domainName.$domainSuf 3600 A $ip\nsend\n" | nsupdate -v
+
 echo "Post to its own web server"
 wget http://$ip:$webPort/install?ip=$ip --post-data $postData -o /tmp/appscale.log

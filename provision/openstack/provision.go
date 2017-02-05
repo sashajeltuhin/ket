@@ -30,7 +30,6 @@ func prepNodeTemplate(auth Auth, conf Config, nodeData serverData, opts KetOpts,
 	if parseErr != nil {
 		return nil, parseErr
 	}
-	fmt.Printf("Auth formatted: %v\n", string(jsonStr))
 	tokens["nodeName"] = nodeData.Server.Name
 	tokens["webPort"] = "8013"
 	tokens["dcip"] = opts.DNSip
@@ -67,7 +66,6 @@ func buildNode(auth Auth, conf Config, nodeData serverData, opts KetOpts, nodeTy
 		case "install":
 			conf.InstallscriptURL = "https://raw.githubusercontent.com/sashajeltuhin/ket/master/provision/openstack/scripts/ketinstall.sh"
 			break
-
 		default:
 			conf.InstallscriptURL = "https://raw.githubusercontent.com/sashajeltuhin/ket/master/provision/openstack/scripts/ketnode.sh"
 			break
