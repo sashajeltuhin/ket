@@ -20,6 +20,17 @@ type ProvisionedNodes struct {
 	Worker []KetNode
 }
 
+type NodesMeta struct {
+	num  uint16
+	name string
+}
+
+type CachedNodesMeta struct {
+	Etcd   NodesMeta
+	Master NodesMeta
+	Worker NodesMeta
+}
+
 type Response struct {
 	Status string `json:"status"`
 }
@@ -63,22 +74,32 @@ func ProvisionAndInstall(w http.ResponseWriter, r *http.Request) {
 		log.Println("Body error", bodyErr)
 	}
 
-	//	addToDNS(bag.Opts.DNSip, bag.Installer.Host, bag.Opts.Domain, bag.Opts.Suffix, ip)
 	//kick off all the requested nodes
 
 	bag.Config.InstallscriptURL = ""
 
-	var _, erretcd = buildNode(bag.Auth, bag.Config, buildNodeData("ketautoetcd", bag.Opts), bag.Opts, "etcd", ip)
-	if erretcd != nil {
-		log.Println("Error instantiating etcd node", erretcd)
+	for i := 0; i < int(bag.Opts.EtcdNodeCount); i++ {
+		nodeName := buildFileName(bag.Opts.EtcdName, i)
+		var _, erretcd = buildNode(bag.Auth, bag.Config, buildNodeData(nodeName, bag.Opts), bag.Opts, "etcd", ip)
+		if erretcd != nil {
+			log.Println("Error instantiating etcd node", erretcd)
+		}
 	}
-	var _, errMaster = buildNode(bag.Auth, bag.Config, buildNodeData("ketautomaster", bag.Opts), bag.Opts, "master", ip)
-	if errMaster != nil {
-		log.Println("Error instantiating master node", errMaster)
+
+	for i := 0; i < int(bag.Opts.MasterNodeCount); i++ {
+		nodeName := buildFileName(bag.Opts.MasterName, i)
+		var _, errMaster = buildNode(bag.Auth, bag.Config, buildNodeData(nodeName, bag.Opts), bag.Opts, "master", ip)
+		if errMaster != nil {
+			log.Println("Error instantiating master node", errMaster)
+		}
 	}
-	var _, errWorker = buildNode(bag.Auth, bag.Config, buildNodeData("ketautoworker", bag.Opts), bag.Opts, "worker", ip)
-	if errWorker != nil {
-		log.Println("Error instantiating worker node", errWorker)
+
+	for i := 0; i < int(bag.Opts.WorkerNodeCount); i++ {
+		nodeName := buildFileName(bag.Opts.WorkerName, i)
+		var _, errWorker = buildNode(bag.Auth, bag.Config, buildNodeData(nodeName, bag.Opts), bag.Opts, "worker", ip)
+		if errWorker != nil {
+			log.Println("Error instantiating worker node", errWorker)
+		}
 	}
 }
 
@@ -89,13 +110,16 @@ func NodeUp(w http.ResponseWriter, r *http.Request) {
 	nodeType := q["type"][0]
 	nodeIP := q["ip"][0]
 	nodeName := q["name"][0]
-	fmt.Println("Parsed vals:", nodeType, nodeIP, nodeName)
+	log.Println("Parsed vals:", nodeType, nodeIP, nodeName)
 
 	bag, bodyErr := parseBody(r)
 	if bodyErr != nil {
 		log.Println("Body error", bodyErr)
 	}
-	//	addToDNS(bag.Opts.DNSip, bag.Installer.Host, bag.Opts.Domain, bag.Opts.Suffix, nodeIP)
+
+	log.Println("Bag", bag)
+	//save the provisioned node
+	cacheNode(nodeName, nodeIP, bag)
 
 	w.Header().Set("Content-Type", "application/json")
 	resp := Response{Status: "Received node"}
@@ -103,15 +127,62 @@ func NodeUp(w http.ResponseWriter, r *http.Request) {
 	checkIfStartKetInstall(bag)
 }
 
+func cacheNode(nodeName string, nodeIP string, bag KetBag) {
+	log.Println("Caching new node:", nodeName)
+	cached := KetNode{ID: nodeName, PrivateIPv4: nodeIP, PublicIPv4: nodeIP, SSHUser: bag.Opts.SSHUser}
+	cachedJson, _ := json.Marshal(cached)
+	fmt.Println("Marshaled node", string(cachedJson))
+	errwrite := ioutil.WriteFile(nodeName, cachedJson, 0644)
+	if errwrite != nil {
+		log.Printf("Issues serializing cachedJson file %v\n", errwrite)
+	}
+}
+
 func checkIfStartKetInstall(bag KetBag) {
 	var check bool = false
+	var nodeMeta CachedNodesMeta
+	nodeMeta.Etcd = NodesMeta{num: bag.Opts.EtcdNodeCount, name: bag.Opts.EtcdName}
+	nodeMeta.Master = NodesMeta{num: bag.Opts.MasterNodeCount, name: bag.Opts.MasterName}
+	nodeMeta.Worker = NodesMeta{num: bag.Opts.WorkerNodeCount, name: bag.Opts.WorkerName}
+	check = isCacheComplete(nodeMeta)
 	if check {
 		nodes := ProvisionedNodes{}
-		nodes.Etcd = append(nodes.Etcd, KetNode{ID: "1", Host: "ketautoetcd", PublicIPv4: "10.20.50.1", PrivateIPv4: "10.20.50.1", SSHUser: bag.Opts.SSHUser})
-		nodes.Master = append(nodes.Master, KetNode{ID: "1", Host: "ketautomaster", PublicIPv4: "10.20.50.1", PrivateIPv4: "10.20.50.1", SSHUser: bag.Opts.SSHUser})
-		nodes.Worker = append(nodes.Worker, KetNode{ID: "1", Host: "ketautoworker", PublicIPv4: "10.20.50.1", PrivateIPv4: "10.20.50.1", SSHUser: bag.Opts.SSHUser})
+		for i := 0; i < int(nodeMeta.Etcd.num); i++ {
+			fileName := buildFileName(nodeMeta.Etcd.name, i)
+			n, cacheErr := getCachedNode(fileName)
+			if cacheErr != nil {
+				log.Println("Cannot read data for node", fileName, cacheErr)
+			}
+			nodes.Etcd = append(nodes.Etcd, KetNode{ID: n.Host, Host: n.Host, PublicIPv4: n.PublicIPv4, PrivateIPv4: n.PrivateIPv4, SSHUser: bag.Opts.SSHUser})
+		}
+
+		for i := 0; i < int(nodeMeta.Master.num); i++ {
+			fileName := buildFileName(nodeMeta.Master.name, i)
+			n, cacheErr := getCachedNode(fileName)
+			if cacheErr != nil {
+				log.Println("Cannot read data for node", fileName, cacheErr)
+			}
+			nodes.Master = append(nodes.Master, KetNode{ID: n.Host, Host: n.Host, PublicIPv4: n.PublicIPv4, PrivateIPv4: n.PrivateIPv4, SSHUser: bag.Opts.SSHUser})
+		}
+
+		for i := 0; i < int(nodeMeta.Worker.num); i++ {
+			fileName := buildFileName(nodeMeta.Worker.name, i)
+			n, cacheErr := getCachedNode(fileName)
+			if cacheErr != nil {
+				log.Println("Cannot read data for node", fileName, cacheErr)
+			}
+			nodes.Worker = append(nodes.Worker, KetNode{ID: n.Host, Host: n.Host, PublicIPv4: n.PublicIPv4, PrivateIPv4: n.PrivateIPv4, SSHUser: bag.Opts.SSHUser})
+		}
+
 		startInstall(bag.Opts, nodes)
 	}
+}
+
+func buildFileName(fileName string, i int) string {
+	if i > 0 {
+		fileName = fmt.Sprintf("%s_%s", fileName, i)
+	}
+	return fileName
 }
 
 func startInstall(opts KetOpts, nodes ProvisionedNodes) {
@@ -176,5 +247,53 @@ func makeUniqueFile() (*os.File, error) {
 	filename := "/ket/kismatic-cluster.yaml"
 
 	return os.Create(filename)
+
+}
+
+func isCacheComplete(nodeMeta CachedNodesMeta) bool {
+	//check etcd
+	for i := 0; i < int(nodeMeta.Etcd.num); i++ {
+		fileName := buildFileName(nodeMeta.Etcd.name, i)
+		if doesFileExist(fileName) == false {
+			return false
+		}
+	}
+	for i := 0; i < int(nodeMeta.Master.num); i++ {
+		fileName := buildFileName(nodeMeta.Master.name, i)
+		if doesFileExist(fileName) == false {
+			return false
+		}
+	}
+	for i := 0; i < int(nodeMeta.Worker.num); i++ {
+		fileName := buildFileName(nodeMeta.Worker.name, i)
+		if doesFileExist(fileName) == false {
+			return false
+		}
+	}
+
+	log.Println("All nodes in place")
+	return true
+}
+
+func doesFileExist(fileName string) bool {
+	_, err := os.Stat(fileName)
+	if err != nil {
+		log.Println("Node is not there yet", fileName)
+		return false
+	}
+	log.Println("Node found", fileName)
+	return true
+}
+
+func getCachedNode(fileName string) (KetNode, error) {
+	var node KetNode
+	dat, readerr := ioutil.ReadFile(fileName)
+	fmt.Println("Opened node file", len(dat), readerr)
+	if readerr == nil && dat != nil && len(dat) > 0 {
+		deserr := json.Unmarshal(dat, &node)
+		return node, deserr
+	}
+
+	return node, readerr
 
 }

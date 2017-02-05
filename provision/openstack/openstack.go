@@ -10,6 +10,9 @@ type KetOpts struct {
 	EtcdNodeCount   uint16
 	MasterNodeCount uint16
 	WorkerNodeCount uint16
+	EtcdName        string
+	MasterName      string
+	WorkerName      string
 	LeaveArtifacts  bool
 	RunKismatic     bool
 	NoPlan          bool
@@ -92,6 +95,9 @@ Smallish instances will be created with public IP addresses. The command will no
 	cmd.Flags().StringVarP(&opts.Flavor, "flavor", "", "f2c96d12-5454-450c-9ae6-177c4d82eaf3", "Preferred Flavor")
 	cmd.Flags().StringVarP(&opts.Network, "network", "", "22e1a428-74a3-4fc1-bd5c-41e10b8ff617", "Preferred Network")
 	cmd.Flags().StringVarP(&opts.SecGroup, "sec-grp", "", "ket", "Preferred Security Group")
+	cmd.Flags().StringVarP(&opts.EtcdName, "etcd-name", "", "ketautoetcd", "ETCD node name pattern")
+	cmd.Flags().StringVarP(&opts.MasterName, "master-name", "", "ketautomaster", "Master node name pattern")
+	cmd.Flags().StringVarP(&opts.WorkerName, "worker-name", "", "ketautoworker", "Worker node name pattern")
 
 	return cmd
 }

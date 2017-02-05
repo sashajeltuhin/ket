@@ -76,7 +76,7 @@ func buildNode(auth Auth, conf Config, nodeData serverData, opts KetOpts, nodeTy
 		return "", fmt.Errorf("Error downloading script %v", scriptErr)
 	}
 	scriptRaw := string(script)
-	tokens, parseErr := prepNodeTemplate(auth, conf, nodeData, opts, nodeType, "")
+	tokens, parseErr := prepNodeTemplate(auth, conf, nodeData, opts, nodeType, webIP)
 	if parseErr != nil {
 		return "", parseErr
 	}
