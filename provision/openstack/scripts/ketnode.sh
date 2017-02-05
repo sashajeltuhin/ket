@@ -12,7 +12,7 @@ sed -i \"s/mirrorlist=https/mirrorlist=http/\" /etc/yum.repos.d/epel.repo
 yum check-update
 yum -y install wget libcgroup cifs-utils nano openssh-clients libcgroup-tools unzip iptables-services net-tools bind bind-utils
 service cgconfig start
-echo "root:$domainPass" | chpasswd
+echo "root:$rootPass" | chpasswd
 echo "Updating hosts file"
 x=$(hostname -I)
 eval ipval=($x)
@@ -37,4 +37,6 @@ echo "kismaticuser:$domainPass" | chpasswd
 echo "kismaticuser ALL = (root) NOPASSWD:ALL" | tee /etc/sudoers.d/kismaticuser
 chmod 0440 /etc/sudoers.d/kismaticuser
 echo -e "server $dcip\nupdate add $nodeName.$domainName.$domainSuf 3600 A $ip\nsend\n" | nsupdate -v
-wget http://$webIP:$webPort/nodeup?type=$nodeType&ip=$ip&name=$nodeName --post-data $postData -o /tmp/appscale.log
+
+echo "Post to the installer that the node is done"
+wget "http://$webIP:$webPort/nodeup?type=$nodeType&ip=$ip&name=$nodeName" --post-data $postData -o /tmp/appscale.log
