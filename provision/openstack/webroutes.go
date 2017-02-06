@@ -216,8 +216,13 @@ func startInstall(opts KetOpts, nodes ProvisionedNodes) {
 	}
 
 	//"/ket/kismatic install apply -f " + fileName
+	errDir := os.Chdir("/ket")
+	if errDir != nil {
+		log.Println("Error switching to KET folder", errDir)
+	}
 	cmd := "/ket/kismatic"
 	args := []string{"install", "apply", "-f", fileName}
+	log.Println("Running let install", cmd, args)
 	out, err := exec.Command(cmd, args...).Output()
 	if err != nil {
 		log.Println("Error installing Kismatic", string(out), err)

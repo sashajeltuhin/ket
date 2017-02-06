@@ -23,7 +23,7 @@ type Plan struct {
 
 const OverlayNetworkPlan = `cluster:
   name: kubernetes
-  admin_password: {{.AdminPassword}}      # This password is used to login to the Kubernetes Dashboard and can also be used for administration without a security certificate
+  admin_password: "{{.AdminPassword}}"      # This password is used to login to the Kubernetes Dashboard and can also be used for administration without a security certificate
   allow_package_installation: true      # When false, installation will not occur if any node is missing the correct deb/rpm packages. When true, the installer will attempt to install missing packages for you.
   networking:
     type: overlay                        # overlay or routed. Routed pods can be addressed from outside the Kubernetes cluster; Overlay pods can only address each other.

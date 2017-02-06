@@ -86,7 +86,7 @@ Smallish instances will be created with public IP addresses. The command will no
 	cmd.Flags().StringVarP(&opts.OS, "operating-system", "o", "ubuntu", "Which flavor of Linux to provision. Try ubuntu, centos or rhel.")
 	cmd.Flags().BoolVarP(&opts.Storage, "storage-cluster", "s", false, "Create a storage cluster from all Worker nodes.")
 	cmd.Flags().StringVarP(&opts.AdminPass, "admin-pass", "", "@ppr3nda", "Admin password")
-	cmd.Flags().StringVarP(&opts.SSHUser, "ssh-user", "", "kismatic", "SSH User")
+	cmd.Flags().StringVarP(&opts.SSHUser, "ssh-user", "", "kismaticuser", "SSH User")
 	cmd.Flags().StringVarP(&opts.SSHFile, "ssh-file", "", "/ket/kismaticuser.key", "SSH File")
 	cmd.Flags().StringVarP(&opts.Domain, "domain", "", "ket", "Domain name")
 	cmd.Flags().StringVarP(&opts.Suffix, "suffix", "", "local", "Domain suffix")
