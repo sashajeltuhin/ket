@@ -205,8 +205,8 @@ func startInstall(opts KetOpts, nodes ProvisionedNodes) {
 		Worker:              nodes.Worker,
 		Ingress:             []KetNode{nodes.Worker[0]},
 		Storage:             storageNodes,
-		MasterNodeFQDN:      nodes.Master[0].PublicIPv4,
-		MasterNodeShortName: nodes.Master[0].PrivateIPv4,
+		MasterNodeFQDN:      nodes.Master[0].Host,
+		MasterNodeShortName: nodes.Master[0].Host,
 		SSHKeyFile:          opts.SSHFile,
 		SSHUser:             opts.SSHUser,
 	})
@@ -220,21 +220,10 @@ func startInstall(opts KetOpts, nodes ProvisionedNodes) {
 	args := []string{"install", "apply", "-f", fileName}
 	out, err := exec.Command(cmd, args...).Output()
 	if err != nil {
-		log.Println("Error installing Kismatic", out, err)
+		log.Println("Error installing Kismatic", string(out), err)
 	}
-	log.Println("Kismatic Install:", out)
+	log.Println("Kismatic Install:", string(out))
 
-}
-
-func addToDNS(dns string, serverName string, domain string, suf string, ip string) {
-	cmd := "echo -e \"server " + dns + "\\nupdate add " + serverName + "." + domain + "." + suf + " 3600 A " + ip + "\\nsend\\n\" | nsupdate -v"
-	log.Println("Exec command dns:", cmd)
-	out, err := exec.Command("sh", "-c", cmd).Output()
-	if err != nil {
-		log.Println("Error adding to DNS", out, err)
-	}
-	log.Println("Add dns:", out)
-	//echo -e "server 10.0.0.1\nupdate add host.domain.nl 3600 A 10.0.0.2\nsend\n" | nsupdate -v
 }
 
 func makePlan(pln *Plan) (string, error) {
