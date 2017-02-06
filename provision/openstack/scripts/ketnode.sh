@@ -33,7 +33,7 @@ EOF
 chattr +i /etc/resolv.conf
 echo "Add kismatic user"
 useradd -d /home/kismaticuser -m kismaticuser
-echo "kismaticuser:$domainPass" | chpasswd
+echo "kismaticuser:$rootPass" | chpasswd
 echo "kismaticuser ALL = (root) NOPASSWD:ALL" | tee /etc/sudoers.d/kismaticuser
 chmod 0440 /etc/sudoers.d/kismaticuser
 echo -e "server $dcip\nupdate add $nodeName.$domainName.$domainSuf 3600 A $ip\nsend\n" | nsupdate -v

@@ -65,7 +65,7 @@ docker build -t sashaz/ketinstall .
 docker run -d --name ket -p 8013:8013 -v /ket:/ket sashaz/ketinstall
 echo "Configure KET user and download KET"
 useradd -d /home/kismaticuser -m kismaticuser
-echo "kismaticuser:$domainPass" | chpasswd
+echo "kismaticuser:$rootPass" | chpasswd
 echo "kismaticuser ALL = (root) NOPASSWD:ALL" | tee /etc/sudoers.d/kismaticuser
 chmod 0440 /etc/sudoers.d/kismaticuser
 curl https://kismatic-packages-rpm.s3-accelerate.amazonaws.com/kismatic.repo -o /etc/yum.repos.d/kismatic.repo
@@ -74,8 +74,6 @@ chmod -R 777 /ket
 cd /ket
 curl -L https://kismatic-installer.s3-accelerate.amazonaws.com/latest/kismatic.tar.gz | tar -zx
 ssh-keygen -t rsa -b 4096 -f kismaticuser.key -P ""
-
-#ssh-copy-id -i ./kismaticuser.key.pub kismaticuser@
 
 curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
 chmod +x ./kubectl

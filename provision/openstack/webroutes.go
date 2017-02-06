@@ -128,8 +128,16 @@ func NodeUp(w http.ResponseWriter, r *http.Request) {
 }
 
 func cacheNode(nodeName string, nodeIP string, bag KetBag) {
+	//sshpass -p passwd ssh-copy-id -i /ket/kismaticuser.key.pub -o StrictHostKeyChecking=no kismaticuser@nodeIP
+	args := []string{"-p", bag.Opts.AdminPass, "ssh-copy-id", "-i", "/ket/kismaticuser.key.pub", "-o", "StrictHostKeyChecking=no", fmt.Sprintf("kismaticuser@%s", nodeIP)}
+	log.Println("sshpass with args", args)
+	out, err := exec.Command("sshpass", args...).Output()
+	if err != nil {
+		log.Println("Error pushing ssh cert", out, err)
+	}
+
 	log.Println("Caching new node:", nodeName)
-	cached := KetNode{ID: nodeName, PrivateIPv4: nodeIP, PublicIPv4: nodeIP, SSHUser: bag.Opts.SSHUser}
+	cached := KetNode{ID: nodeName, Host: nodeName, PrivateIPv4: nodeIP, PublicIPv4: nodeIP, SSHUser: bag.Opts.SSHUser}
 	cachedJson, _ := json.Marshal(cached)
 	fmt.Println("Marshaled node", string(cachedJson))
 	errwrite := ioutil.WriteFile(nodeName, cachedJson, 0644)
@@ -190,7 +198,7 @@ func startInstall(opts KetOpts, nodes ProvisionedNodes) {
 	if opts.Storage {
 		storageNodes = []KetNode{nodes.Worker[0]}
 	}
-	err := makePlan(&Plan{
+	fileName, err := makePlan(&Plan{
 		AdminPassword:       opts.AdminPass,
 		Etcd:                nodes.Etcd,
 		Master:              nodes.Master,
@@ -204,7 +212,18 @@ func startInstall(opts KetOpts, nodes ProvisionedNodes) {
 	})
 	if err != nil {
 		log.Printf("Error creating plan", err)
+		return
 	}
+
+	//"/ket/kismatic install apply -f " + fileName
+	cmd := "/ket/kismatic"
+	args := []string{"install", "apply", "-f", fileName}
+	out, err := exec.Command(cmd, args...).Output()
+	if err != nil {
+		log.Println("Error installing Kismatic", out, err)
+	}
+	log.Println("Kismatic Install:", out)
+
 }
 
 func addToDNS(dns string, serverName string, domain string, suf string, ip string) {
@@ -218,29 +237,29 @@ func addToDNS(dns string, serverName string, domain string, suf string, ip strin
 	//echo -e "server 10.0.0.1\nupdate add host.domain.nl 3600 A 10.0.0.2\nsend\n" | nsupdate -v
 }
 
-func makePlan(pln *Plan) error {
+func makePlan(pln *Plan) (string, error) {
 	template, err := template.New("planOverlay").Parse(OverlayNetworkPlan)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	f, err := makeUniqueFile()
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	defer f.Close()
 	w := bufio.NewWriter(f)
 
 	if err = template.Execute(w, &pln); err != nil {
-		return err
+		return "", err
 	}
 
 	w.Flush()
 	fmt.Println("To install your cluster, run:")
 	fmt.Println("./kismatic install apply -f " + f.Name())
 
-	return nil
+	return f.Name(), nil
 }
 
 func makeUniqueFile() (*os.File, error) {
