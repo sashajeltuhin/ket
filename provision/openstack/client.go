@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	s "strings"
 	"time"
@@ -364,10 +365,10 @@ func assignFloatingIP(auth Auth, conf Config, serverID string, ip string) error 
 
 	jsonStr, parseErr := json.Marshal(actionObj)
 	if parseErr != nil {
-		fmt.Errorf("Something is wrong with action body", parseErr)
+		log.Println("Something is wrong with action body", parseErr)
 		return fmt.Errorf("Something is wrong with auth body: %v", parseErr)
 	}
-	fmt.Errorf("Serialized floating IP structure", jsonStr)
+	log.Println("Serialized floating IP structure", jsonStr)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
 	req.Header.Set("Content-Type", "application/json")
 
@@ -380,7 +381,7 @@ func assignFloatingIP(auth Auth, conf Config, serverID string, ip string) error 
 	}
 	resp, err := client.Do(req)
 	body, _ := ioutil.ReadAll(resp.Body)
-	fmt.Errorf("Floating IP resp", body, err)
+	log.Println("Floating IP resp", body, err)
 	if err != nil {
 		panic(err)
 	}
