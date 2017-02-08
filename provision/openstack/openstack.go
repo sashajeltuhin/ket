@@ -228,6 +228,7 @@ func askForInput(objList map[string]string, reader *bufio.Reader) string {
 	} else {
 		objID := arr[index-1]
 		fmt.Println("You picked ", objList[objID])
+		objID = strings.Trim(objID, "\"")
 		return objID
 	}
 }
