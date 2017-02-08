@@ -362,7 +362,7 @@ func (c *Client) assignFloatingIP(auth Auth, conf Config, serverID string, ip st
 		return fmt.Errorf("Error with auth: %v", err)
 	}
 
-	url := conf.Urlcomp + conf.Apivercomp + "/" + auth.Body.Tenant + "/servers/" + serverID + "/action/"
+	url := conf.Urlcomp + conf.Apivercomp + "/" + auth.Body.Tenant + "/servers/" + serverID + "/action"
 	fmt.Println("Action URL:>", url)
 
 	var actionObj floatingIPAction
