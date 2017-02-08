@@ -364,11 +364,12 @@ func assignFloatingIP(auth Auth, conf Config, serverID string, ip string) error 
 	actionObj.AddFloatingIp.Address = ip
 
 	jsonStr, parseErr := json.Marshal(actionObj)
+	log.Println("Serialized floating IP structure", jsonStr)
 	if parseErr != nil {
 		log.Println("Something is wrong with action body", parseErr)
 		return fmt.Errorf("Something is wrong with auth body: %v", parseErr)
 	}
-	log.Println("Serialized floating IP structure", jsonStr)
+
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
 	req.Header.Set("Content-Type", "application/json")
 
@@ -381,7 +382,7 @@ func assignFloatingIP(auth Auth, conf Config, serverID string, ip string) error 
 	}
 	resp, err := client.Do(req)
 	body, _ := ioutil.ReadAll(resp.Body)
-	log.Println("Floating IP resp", body, err)
+	log.Println("Floating IP resp", string(body), err)
 	if err != nil {
 		panic(err)
 	}
