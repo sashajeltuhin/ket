@@ -202,11 +202,11 @@ func checkIfStartKetInstall(bag KetBag) {
 			if err != nil {
 				log.Println("Cannot read ingress file", err)
 			}
-			errIP := assignFloatingIP(bag.Auth, bag.Config, ingressNode.ID, bag.Opts.IngressIP)
+			c := Client{}
+			errIP := c.assignFloatingIP(bag.Auth, bag.Config, ingressNode.ID, bag.Opts.IngressIP)
 			if errIP != nil {
 				log.Println("Error assigning floating ip to Ingress", errIP)
 			}
-
 		}
 
 		startInstall(bag.Opts, nodes)

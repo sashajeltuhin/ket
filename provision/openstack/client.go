@@ -356,7 +356,12 @@ func (c *Client) listFloatingIPs(auth Auth, conf Config) (map[string]string, err
 	return objMap, nil
 }
 
-func assignFloatingIP(auth Auth, conf Config, serverID string, ip string) error {
+func (c *Client) assignFloatingIP(auth Auth, conf Config, serverID string, ip string) error {
+	token, err := c.login(auth, conf)
+	if err != nil {
+		return fmt.Errorf("Error with auth: %v", err)
+	}
+
 	url := conf.Urlcomp + conf.Apivercomp + "/" + auth.Body.Tenant + "/servers/" + serverID + "/action/"
 	fmt.Println("Action URL:>", url)
 
@@ -364,13 +369,14 @@ func assignFloatingIP(auth Auth, conf Config, serverID string, ip string) error 
 	actionObj.AddFloatingIp.Address = ip
 
 	jsonStr, parseErr := json.Marshal(actionObj)
-	log.Println("Serialized floating IP structure", jsonStr)
+	log.Println("Serialized floating IP structure", string(jsonStr))
 	if parseErr != nil {
 		log.Println("Something is wrong with action body", parseErr)
 		return fmt.Errorf("Something is wrong with auth body: %v", parseErr)
 	}
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
+	req.Header.Set("X-Auth-Token", token)
 	req.Header.Set("Content-Type", "application/json")
 
 	tr := http.Transport{
