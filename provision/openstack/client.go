@@ -367,7 +367,7 @@ func assignFloatingIP(auth Auth, conf Config, serverID string, ip string) error 
 		fmt.Errorf("Something is wrong with action body", parseErr)
 		return fmt.Errorf("Something is wrong with auth body: %v", parseErr)
 	}
-
+	fmt.Errorf("Serialized floating IP structure", jsonStr)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
 	req.Header.Set("Content-Type", "application/json")
 
@@ -379,6 +379,8 @@ func assignFloatingIP(auth Auth, conf Config, serverID string, ip string) error 
 		Timeout:   30 * time.Second,
 	}
 	resp, err := client.Do(req)
+	body, _ := ioutil.ReadAll(resp.Body)
+	fmt.Errorf("Floating IP resp", body, err)
 	if err != nil {
 		panic(err)
 	}
