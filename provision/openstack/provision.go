@@ -196,8 +196,6 @@ func checkIfStartKetInstall(bag KetBag) {
 			nodes.Worker = append(nodes.Worker, KetNode{ID: n.Host, Host: n.Host, PublicIPv4: n.PublicIPv4, PrivateIPv4: n.PrivateIPv4, SSHUser: bag.Opts.SSHUser})
 		}
 
-		startInstall(bag.Opts, nodes)
-
 		//assign floating IP to the ingress, if requested
 		if bag.Opts.IngressIP != "" {
 			ingressNode, err := getCachedNode("ingress")
@@ -210,6 +208,8 @@ func checkIfStartKetInstall(bag KetBag) {
 			}
 
 		}
+
+		startInstall(bag.Opts, nodes)
 	}
 }
 
