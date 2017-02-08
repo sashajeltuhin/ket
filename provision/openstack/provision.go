@@ -253,7 +253,8 @@ func provisionKetNodes(bag KetBag, ip string) error {
 		}
 		//assume that ingress, if requested is on the first worker
 		if i == 0 && bag.Opts.IngressIP != "" {
-			log.Println("Caching ingress node:", nodeName)
+			nodeid = strings.Trim(nodeid, "\"")
+			fmt.Println("Caching ingress node:", nodeName, nodeid)
 			cached := KetNode{ID: nodeid}
 			cachedJson, _ := json.Marshal(cached)
 			fmt.Println("Marshaled node", string(cachedJson))
