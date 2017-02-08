@@ -14,10 +14,18 @@ import (
 	"github.com/Jeffail/gabs"
 )
 
+const (
+	KeystonePort = "5000"
+	ComputePort  = "8774"
+	NetworkPort  = "9696"
+)
+
 type Config struct {
 	Urlauth          string
 	Apiverauth       string
+	Apivernet        string
 	Urlcomp          string
+	Urlnet           string
 	Apivercomp       string
 	InstallscriptURL string
 }
@@ -28,6 +36,7 @@ type Credentials struct {
 	Password string `json:"password"`
 }
 
+// Openstack auth structure
 type Auth struct {
 	Body struct {
 		Credentials Credentials `json:"passwordCredentials"`
@@ -41,6 +50,7 @@ type Client struct {
 	Expires time.Time `json:"expires"`
 }
 
+//Openstack server info structure
 type serverData struct {
 	Server struct {
 		Name            string     `json:"name"`
@@ -61,13 +71,19 @@ type secgroup struct {
 	Name string `json:"name"`
 }
 
+type floatingIPAction struct {
+	AddFloatingIp struct {
+		Address string `json:"address"`
+	} `json:"addFloatingIp"`
+}
+
 func isValidJSON(s string) bool {
 	var js map[string]interface{}
 	return json.Unmarshal([]byte(s), &js) == nil
 }
 
 func (c *Client) login(a Auth, conf Config) (string, error) {
-
+	fmt.Println("auth", a)
 	var fileName = a.Body.Credentials.Username + ".token"
 	dat, readerr := ioutil.ReadFile(fileName)
 	fmt.Println("Opened token file", len(dat), readerr)
@@ -239,4 +255,167 @@ func (c *Client) downloadInitScript(url string) (string, error) {
 
 	return string(body), nil
 
+}
+
+func (c *Client) parseObj(body []byte, objNode string, idfield string, namefield string) (map[string]string, error) {
+	var objMap map[string]string = make(map[string]string)
+	jsonParsed, err := gabs.ParseJSON(body)
+	if err != nil {
+		return nil, err
+	}
+	if jsonParsed.Exists(objNode) {
+		ids := s.TrimLeft(jsonParsed.Path(fmt.Sprintf("%s.%s", objNode, idfield)).String(), "[")
+		ids = s.TrimRight(ids, "]")
+		idarray := s.Split(ids, ",")
+		names := s.TrimLeft(jsonParsed.Path(fmt.Sprintf("%s.%s", objNode, namefield)).String(), "[")
+		names = s.TrimRight(names, "]")
+		namearray := s.Split(names, ",")
+		count := len(idarray)
+		for i := 0; i < count; i++ {
+			objMap[idarray[i]] = namearray[i]
+		}
+	}
+	return objMap, nil
+}
+
+func (c *Client) listImages(auth Auth, conf Config) (map[string]string, error) {
+	objType := "images"
+	url := conf.Urlcomp + conf.Apivercomp + "/" + auth.Body.Tenant + "/" + objType
+	body, err := c.listObjects(auth, conf, url, objType)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("Cannot load images. %v", err))
+	}
+	objMap, errParse := c.parseObj(body, "images", "id", "name")
+	if errParse != nil {
+		return nil, errParse
+	}
+
+	return objMap, nil
+}
+
+func (c *Client) listFlavors(auth Auth, conf Config) (map[string]string, error) {
+	objType := "flavors"
+	url := conf.Urlcomp + conf.Apivercomp + "/" + auth.Body.Tenant + "/" + objType
+	body, err := c.listObjects(auth, conf, url, objType)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("Cannot load flavors. %v", err))
+	}
+
+	objMap, errParse := c.parseObj(body, "flavors", "id", "name")
+	if errParse != nil {
+		return nil, errParse
+	}
+	return objMap, nil
+}
+
+func (c *Client) listNetworks(auth Auth, conf Config) (map[string]string, error) {
+	objType := "networks"
+	url := conf.Urlnet + conf.Apivernet + "/" + objType
+	fmt.Println("Network URL", url)
+	body, err := c.listObjects(auth, conf, url, objType)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("Cannot load networks. %v", err))
+	}
+
+	objMap, errParse := c.parseObj(body, "networks", "id", "name")
+	if errParse != nil {
+		return nil, errParse
+	}
+
+	return objMap, nil
+}
+
+func (c *Client) listSecGroups(auth Auth, conf Config) (map[string]string, error) {
+	objType := "os-security-groups"
+	url := conf.Urlcomp + conf.Apivercomp + "/" + auth.Body.Tenant + "/" + objType
+	body, err := c.listObjects(auth, conf, url, objType)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("Cannot load security groups. %v", err))
+	}
+	objMap, errParse := c.parseObj(body, "security_groups", "id", "name")
+	if errParse != nil {
+		return nil, errParse
+	}
+
+	return objMap, nil
+}
+
+func (c *Client) listFloatingIPs(auth Auth, conf Config) (map[string]string, error) {
+	objType := "os-floating-ips"
+	url := conf.Urlcomp + conf.Apivercomp + "/" + auth.Body.Tenant + "/" + objType
+	body, err := c.listObjects(auth, conf, url, objType)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("Cannot load security groups. %v", err))
+	}
+	objMap, errParse := c.parseObj(body, "floating_ips", "ip", "ip")
+	if errParse != nil {
+		return nil, errParse
+	}
+
+	return objMap, nil
+}
+
+func assignFloatingIP(auth Auth, conf Config, serverID string, ip string) error {
+	url := conf.Urlcomp + conf.Apivercomp + "/" + auth.Body.Tenant + "/servers/" + serverID + "/action/"
+	fmt.Println("Action URL:>", url)
+
+	var actionObj floatingIPAction
+	actionObj.AddFloatingIp.Address = ip
+
+	jsonStr, parseErr := json.Marshal(actionObj)
+	if parseErr != nil {
+		fmt.Errorf("Something is wrong with action body", parseErr)
+		return fmt.Errorf("Something is wrong with auth body: %v", parseErr)
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
+	req.Header.Set("Content-Type", "application/json")
+
+	tr := http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{
+		Transport: &tr,
+		Timeout:   30 * time.Second,
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	return err
+}
+
+func (c *Client) listObjects(auth Auth, conf Config, url string, objType string) ([]byte, error) {
+	token, err := c.login(auth, conf)
+	if err != nil {
+		return nil, fmt.Errorf("Error with auth: %v", err)
+	}
+
+	req, err := http.NewRequest("GET", url, nil)
+	req.Header.Set("X-Auth-Token", token)
+
+	tr := http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{
+		Transport: &tr,
+		Timeout:   30 * time.Second,
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	fmt.Println("response Status:", resp.Status)
+
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	if isValidJSON(string(body)) == false {
+		return nil, errors.New("Not a valid JSON response: " + string(body))
+	}
+	return body, nil
 }

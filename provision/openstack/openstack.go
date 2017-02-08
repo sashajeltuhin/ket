@@ -1,8 +1,15 @@
 package openstack
 
 import (
+	"bufio"
+	"errors"
 	"fmt"
+	"os"
+	"strconv"
+	"strings"
 
+	"github.com/howeyc/gopass"
+	"github.com/sashajeltuhin/ket/provision/openstack/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -31,31 +38,18 @@ type KetOpts struct {
 	Flavor          string
 	Network         string
 	SecGroup        string
+	OSUrl           string
+	OSTenant        string
+	OSUser          string
+	OSUserPass      string
+	IngressIP       string
 }
 
 func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "openstack",
 		Short: "Provision infrastructure on Openstack.",
-		Long: `Provision infrastructure on Openstack.
-		
-In addition to the commands below, AWS relies on some environment variables and conventions:
-Required:
-  AWS_ACCESS_KEY_ID: [Required] Your AWS access key, required for all operations
-  AWS_SECRET_ACCESS_KEY: [Required] Your AWS secret key, required for all operations
-
-Conditional: (These may be omitted if the -f flag is used)
-  AWS_SUBNET_ID: The ID of a subnet to try to place machines into. If this environment variable exists, 
-                 it must be a real subnet in the us-east-1 region or all commands will fail.
-  AWS_SECURITY_GROUP_ID: The ID of a security group to place all new machines in. Must be a part of the 
-                         above subnet or commands will fail.
-  AWS_KEY_NAME: The name of a Keypair in AWS to be used to create machines. If empty, we will attempt 
-                to use a key named 'kismatic-integration-testing' and fail if it does not exist.
-  AWS_SSH_KEY_PATH: The absolute path to the private key associated with the Key Name above. If left blank,
-                    we will attempt to use a key named 'kismaticuser.key' in the same directory as the 
-					provision tool. This key is important as part of provisioning is ensuring that your
-					instance is online and is able to be reached via SSH.
-`,
+		Long:  `Provision infrastructure on Openstack.`,
 	}
 
 	cmd.AddCommand(CreateCmd())
@@ -67,7 +61,7 @@ func CreateCmd() *cobra.Command {
 	opts := KetOpts{}
 	cmd := &cobra.Command{
 		Use:   "create",
-		Short: "Creates infrastructure for a new cluster. For now, only the US East region is supported.",
+		Short: "Creates infrastructure for a new cluster.",
 		Long: `Creates infrastructure for a new cluster. 
 		
 
@@ -82,8 +76,6 @@ Smallish instances will be created with public IP addresses. The command will no
 	cmd.Flags().Uint16VarP(&opts.WorkerNodeCount, "workerNodeCount", "w", 1, "Count of worker nodes to produce.")
 	cmd.Flags().BoolVarP(&opts.NoPlan, "noplan", "n", false, "If present, foregoes generating a plan file in this directory referencing the newly created nodes")
 	cmd.Flags().BoolVarP(&opts.ForceProvision, "force-provision", "f", false, "If present, generate anything needed to build a cluster including VPCs, keypairs, routes, subnets, & a very insecure security group.")
-	cmd.Flags().StringVarP(&opts.InstanceType, "instance-type-blueprint", "i", "small", "A blueprint of instance type(s). Current options: micro (all t2 micros), small (t2 micros, workers are t2.medium), beefy (M4.large and xlarge)")
-	cmd.Flags().StringVarP(&opts.OS, "operating-system", "o", "ubuntu", "Which flavor of Linux to provision. Try ubuntu, centos or rhel.")
 	cmd.Flags().BoolVarP(&opts.Storage, "storage-cluster", "s", false, "Create a storage cluster from all Worker nodes.")
 	cmd.Flags().StringVarP(&opts.AdminPass, "admin-pass", "", "@ppr3nda", "Admin password")
 	cmd.Flags().StringVarP(&opts.SSHUser, "ssh-user", "", "kismaticuser", "SSH User")
@@ -91,28 +83,120 @@ Smallish instances will be created with public IP addresses. The command will no
 	cmd.Flags().StringVarP(&opts.Domain, "domain", "", "ket", "Domain name")
 	cmd.Flags().StringVarP(&opts.Suffix, "suffix", "", "local", "Domain suffix")
 	cmd.Flags().StringVarP(&opts.DNSip, "dns-ip", "", "10.20.50.175", "Domain IP")
-	cmd.Flags().StringVarP(&opts.Image, "image", "", "177663bc-0c5e-43b3-99d8-7a457ae4f085", "Preferred Image")
-	cmd.Flags().StringVarP(&opts.Flavor, "flavor", "", "f2c96d12-5454-450c-9ae6-177c4d82eaf3", "Preferred Flavor")
-	cmd.Flags().StringVarP(&opts.Network, "network", "", "22e1a428-74a3-4fc1-bd5c-41e10b8ff617", "Preferred Network")
-	cmd.Flags().StringVarP(&opts.SecGroup, "sec-grp", "", "ket", "Preferred Security Group")
+	cmd.Flags().StringVarP(&opts.Image, "image", "", "", "Preferred Image")               //177663bc-0c5e-43b3-99d8-7a457ae4f085
+	cmd.Flags().StringVarP(&opts.Flavor, "flavor", "", "", "Preferred Flavor")            //f2c96d12-5454-450c-9ae6-177c4d82eaf3
+	cmd.Flags().StringVarP(&opts.Network, "network", "", "", "Preferred Network")         //22e1a428-74a3-4fc1-bd5c-41e10b8ff617
+	cmd.Flags().StringVarP(&opts.SecGroup, "sec-grp", "", "", "Preferred Security Group") //ket
 	cmd.Flags().StringVarP(&opts.EtcdName, "etcd-name", "", "ketautoetcd", "ETCD node name pattern")
 	cmd.Flags().StringVarP(&opts.MasterName, "master-name", "", "ketautomaster", "Master node name pattern")
 	cmd.Flags().StringVarP(&opts.WorkerName, "worker-name", "", "ketautoworker", "Worker node name pattern")
+	cmd.Flags().StringVarP(&opts.OSUrl, "os-url", "", "https://api-trial6.client.metacloud.net", "Openstack URL")
+	cmd.Flags().StringVarP(&opts.OSTenant, "os-tenant", "", "f4ec4723e8a541d68ef993b47ef75c94", "Openstack Tenant ID")
+	cmd.Flags().StringVarP(&opts.OSUser, "os-user", "", "", "Openstack User Name")
+	cmd.Flags().StringVarP(&opts.OSUserPass, "os-pass", "", "", "Openstack User Password")
+	cmd.Flags().StringVarP(&opts.IngressIP, "ingress-ip", "", "", "Floating IP for the ingress server")
 
 	return cmd
 }
 func makeInfra(opts KetOpts) error {
-
-	fmt.Print("Provisioning with options", opts)
-	var a Auth
-	a.Body.Credentials.Password = "@ppr3nda"
-	a.Body.Credentials.Username = "sasha"
-	a.Body.Tenant = "f4ec4723e8a541d68ef993b47ef75c94"
 	var conf Config
-	conf.Urlauth = "https://api-trial6.client.metacloud.net:5000/"
+	var a Auth
+	reader := bufio.NewReader(os.Stdin)
+	if opts.OSUrl == "" {
+		fmt.Print("Enter Openstack URL: ")
+		url, _ := reader.ReadString('\n')
+		opts.OSUrl = strings.Trim(url, "\n")
+		fmt.Print("URL: ", opts.OSUrl)
+	}
+	if opts.OSTenant == "" {
+		fmt.Print("Openstack Tenant ID: ")
+		tenant, _ := reader.ReadString('\n') //"f4ec4723e8a541d68ef993b47ef75c94"
+		a.Body.Tenant = strings.Trim(tenant, "\n")
+	} else {
+		a.Body.Tenant = opts.OSTenant
+	}
+
+	if opts.OSUser == "" {
+		fmt.Print("Your user name: ")
+		uname, _ := reader.ReadString('\n')
+		a.Body.Credentials.Username = strings.Trim(uname, "\n")
+	} else {
+		a.Body.Credentials.Username = opts.OSUser
+	}
+
+	if opts.OSUserPass == "" {
+		fmt.Print("Your password: ")
+		pass, _ := gopass.GetPasswdMasked()
+		a.Body.Credentials.Password = strings.Trim(string(pass), "\n")
+	} else {
+		a.Body.Credentials.Password = opts.OSUserPass
+	}
+
+	if opts.DNSip == "" {
+		fmt.Print("Provide IP of the DNS: ")
+		uname, _ := reader.ReadString('\n')
+		opts.DNSip = strings.Trim(uname, "\n")
+	}
+
+	conf.Urlauth = fmt.Sprintf("%s:%s/", opts.OSUrl, KeystonePort)
 	conf.Apiverauth = "v2.0"
-	conf.Urlcomp = "https://api-trial6.client.metacloud.net:8774/"
+	conf.Urlcomp = fmt.Sprintf("%s:%s/", opts.OSUrl, ComputePort)
 	conf.Apivercomp = "v2"
+	conf.Urlnet = fmt.Sprintf("%s:%s/", opts.OSUrl, NetworkPort)
+	conf.Apivernet = "v2.0"
+
+	if opts.IngressIP == "" {
+		fmt.Print("Do you want to assign a floating IP to ingress node? (y, n)")
+		answer, _ := reader.ReadString('\n')
+		answer = strings.Trim(answer, "\n")
+		if answer == "y" || answer == "yes" {
+			ips, err := listFloatingIPs(a, conf)
+			if err != nil {
+				return errors.New(fmt.Sprintf("Cannot load images. %v. Provide your preferred image when calling the program", err))
+			}
+			fmt.Print("Select floating IP: \n")
+			opts.IngressIP = askForInput(ips, reader)
+		}
+	}
+
+	if opts.Image == "" {
+		images, err := listImages(a, conf)
+		if err != nil {
+			return errors.New(fmt.Sprintf("Cannot load images. %v. Provide your preferred image when calling the program", err))
+		}
+		fmt.Print("Select Image: \n")
+		opts.Image = askForInput(images, reader)
+	}
+
+	if opts.Flavor == "" {
+		flavors, err := listFlavors(a, conf)
+		if err != nil {
+			return errors.New(fmt.Sprintf("Cannot load flavors. %v. Provide your preferred image when calling the program", err))
+		}
+		fmt.Print("Select Flavor: \n")
+		opts.Flavor = askForInput(flavors, reader)
+	}
+
+	if opts.Network == "" {
+		networks, err := listNetworks(a, conf)
+		if err != nil {
+			return errors.New(fmt.Sprintf("Cannot load networks. %v. Provide your preferred image when calling the program", err))
+		}
+		fmt.Print("Select Network: \n")
+		opts.Network = askForInput(networks, reader)
+	}
+
+	if opts.SecGroup == "" {
+		secgroups, err := listSecGroups(a, conf)
+		if err != nil {
+			return errors.New(fmt.Sprintf("Cannot load sec groups. %v. Provide your preferred image when calling the program", err))
+		}
+		fmt.Print("Select Security Group: \n")
+		opts.SecGroup = askForInput(secgroups, reader)
+	}
+
+	fmt.Println("Your options", opts)
+
 	server := buildNodeData("ketautoinstall", opts)
 	var nodeID, err = buildNode(a, conf, server, opts, "install", "")
 
@@ -124,4 +208,26 @@ func makeInfra(opts KetOpts) error {
 	fmt.Printf("server id  %s", nodeID)
 
 	return nil
+}
+
+func askForInput(objList map[string]string, reader *bufio.Reader) string {
+	arrPairs := utils.SortMapbyVal(objList)
+	count := len(objList)
+	var arr = make([]string, count)
+	for i := 0; i < count; i++ {
+		arr[i] = arrPairs[i].Key
+		fmt.Printf("%d - %s\n", i+1, arrPairs[i].Value)
+	}
+
+	objI, _ := reader.ReadString('\n')
+	objIndex := strings.Trim(string(objI), "\n")
+	index, _ := strconv.Atoi(objIndex)
+	if index < 1 || index > len(objList) {
+		fmt.Print("Invalid selection. Try again")
+		return askForInput(objList, reader)
+	} else {
+		objID := arr[index-1]
+		fmt.Println("You picked ", objList[objID])
+		return objID
+	}
 }
