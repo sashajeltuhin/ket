@@ -60,9 +60,7 @@ source /etc/profile && source ~/.bash_profile
 echo "Get and install KET orchestrator service"
 go get github.com/sashajeltuhin/ket/provision/exec/provision-web
 cd $GOPATH/src/github.com/sashajeltuhin/ket/provision/exec/provision-web
-docker build -t sashaz/ketinstall .
-docker build -t sashaz/ketinstall .
-docker run -d --name ket -p 8013:8013 -v /ket:/ket sashaz/ketinstall
+docker run -d --name ket -p 8013:8013 -v /ket:/ket sashaz/ketopenstack
 echo "Configure KET user and download KET"
 useradd -d /home/kismaticuser -m kismaticuser
 echo "kismaticuser:$rootPass" | chpasswd

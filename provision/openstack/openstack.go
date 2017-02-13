@@ -77,7 +77,7 @@ Smallish instances will be created with public IP addresses. The command will no
 	cmd.Flags().BoolVarP(&opts.NoPlan, "noplan", "n", false, "If present, foregoes generating a plan file in this directory referencing the newly created nodes")
 	cmd.Flags().BoolVarP(&opts.ForceProvision, "force-provision", "f", false, "If present, generate anything needed to build a cluster including VPCs, keypairs, routes, subnets, & a very insecure security group.")
 	cmd.Flags().BoolVarP(&opts.Storage, "storage-cluster", "s", false, "Create a storage cluster from all Worker nodes.")
-	cmd.Flags().StringVarP(&opts.AdminPass, "admin-pass", "", "@ppr3nda", "Admin password")
+	cmd.Flags().StringVarP(&opts.AdminPass, "admin-pass", "", "", "Admin password")
 	cmd.Flags().StringVarP(&opts.SSHUser, "ssh-user", "", "kismaticuser", "SSH User")
 	cmd.Flags().StringVarP(&opts.SSHFile, "ssh-file", "", "/ket/kismaticuser.key", "SSH File")
 	cmd.Flags().StringVarP(&opts.Domain, "domain", "", "ket", "Domain name")
