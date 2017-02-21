@@ -1,0 +1,12 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: geo-ingress
+spec:
+  rules:
+  - host: autoscaler.ci.apprendalabs.com
+    http:
+      paths:
+      - backend:
+          serviceName: geo-berlin-svc
+          servicePort: 8500

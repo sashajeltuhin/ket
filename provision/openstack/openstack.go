@@ -43,6 +43,7 @@ type KetOpts struct {
 	OSUser          string
 	OSUserPass      string
 	IngressIP       string
+	InstallNodeIP   bool
 }
 
 func Cmd() *cobra.Command {
@@ -95,6 +96,7 @@ Smallish instances will be created with public IP addresses. The command will no
 	cmd.Flags().StringVarP(&opts.OSUser, "os-user", "", "", "Openstack User Name")
 	cmd.Flags().StringVarP(&opts.OSUserPass, "os-pass", "", "", "Openstack User Password")
 	cmd.Flags().StringVarP(&opts.IngressIP, "ingress-ip", "", "", "Floating IP for the ingress server")
+	cmd.Flags().BoolVarP(&opts.InstallNodeIP, "install-ip", "", true, "Set floating IP on the install node, if available. Will be used to establish ssh connection")
 
 	return cmd
 }
@@ -195,8 +197,6 @@ func makeInfra(opts KetOpts) error {
 		opts.SecGroup = askForInput(secgroups, reader)
 	}
 
-	fmt.Println("Your options", opts)
-
 	server := buildNodeData("ketautoinstall", opts)
 	var nodeID, err = buildNode(a, conf, server, opts, "install", "")
 
@@ -205,7 +205,7 @@ func makeInfra(opts KetOpts) error {
 		return err
 	}
 
-	fmt.Printf("server id  %s", nodeID)
+	fmt.Printf("Orchestration started on node ", nodeID)
 
 	return nil
 }

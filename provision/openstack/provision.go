@@ -42,7 +42,6 @@ func GetClient(a Auth, conf Config) error {
 
 	c := Client{}
 	var err = c.getAPIClient(a, conf)
-	fmt.Printf("GetClient called with error: %v\n", err)
 	return err
 }
 
@@ -88,7 +87,7 @@ func buildNode(auth Auth, conf Config, nodeData serverData, opts KetOpts, nodeTy
 	if conf.InstallscriptURL == "" {
 		switch nodeType {
 		case "install":
-			conf.InstallscriptURL = "https://raw.githubusercontent.com/sashajeltuhin/ket/master/provision/openstack/scripts/ketinstall.sh"
+			conf.InstallscriptURL = "https://raw.githubusercontent.com/sashajeltuh	in/ket/master/provision/openstack/scripts/ketinstall.sh"
 			break
 		default:
 			conf.InstallscriptURL = "https://raw.githubusercontent.com/sashajeltuhin/ket/master/provision/openstack/scripts/ketnode.sh"
@@ -113,7 +112,7 @@ func buildNode(auth Auth, conf Config, nodeData serverData, opts KetOpts, nodeTy
 	if err != nil {
 		return "", fmt.Errorf("Error spinning up node %s. Error: %v", nodeData.Server.Name, err)
 	}
-	fmt.Printf("buildNode returned with error: %v\n", err)
+
 	return nodeID, err
 }
 func listImages(auth Auth, conf Config) (map[string]string, error) {
@@ -224,6 +223,30 @@ func provisionKetNodes(bag KetBag, ip string) error {
 	if ip == "" {
 		return errors.New("To provision nodes valid IP of the installer node is required")
 	}
+	//assign floating IP to the installer, if available
+	if bag.Opts.InstallNodeIP == true {
+		c := Client{}
+		ipList, err := c.listFloatingIPs(bag.Auth, bag.Config)
+		if err == nil {
+			var found bool = false
+			for key := range ipList {
+				floatingIP := ipList[key]
+				if floatingIP != bag.Opts.IngressIP {
+					found = true
+					errIP := c.assignFloatingIP(bag.Auth, bag.Config, ip, floatingIP)
+					if errIP != nil {
+						log.Println("Error assigning floating ip to the install node", errIP)
+					}
+					break
+				}
+			}
+			if found == false {
+				log.Println("No floating IPs available to assign to the installer node")
+			}
+		}
+
+	}
+
 	bag.Config.InstallscriptURL = ""
 
 	for i := 0; i < int(bag.Opts.EtcdNodeCount); i++ {
@@ -302,6 +325,12 @@ func startInstall(opts KetOpts, nodes ProvisionedNodes) {
 		log.Println("Error installing Kismatic", string(out), err)
 	}
 	log.Println("Kismatic Install:", string(out))
+	cmdDeploy := "/ket/deployapp.sh"
+	outDep, errDep := exec.Command(cmdDeploy).Output()
+	if errDep != nil {
+		log.Println("Error deploying apps", string(outDep), errDep)
+	}
+	log.Println("Deploying Apps:", string(outDep))
 
 }
 

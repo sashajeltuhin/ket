@@ -84,22 +84,16 @@ func isValidJSON(s string) bool {
 }
 
 func (c *Client) login(a Auth, conf Config) (string, error) {
-	fmt.Println("auth", a)
 	var fileName = a.Body.Credentials.Username + ".token"
 	dat, readerr := ioutil.ReadFile(fileName)
-	fmt.Println("Opened token file", len(dat), readerr)
 	if readerr == nil && dat != nil && len(dat) > 0 {
-		fmt.Printf("Opened token file with content %s", string(dat))
 		var savedCreds Client
 		deserr := json.Unmarshal(dat, &savedCreds)
-		fmt.Printf("Deserialized token file", deserr, savedCreds)
 		if deserr == nil {
 			now := time.Now()
 			exptime := savedCreds.Expires
-			fmt.Println("Checking expiration", exptime)
 			if now.Before(exptime) {
 				c.Token = savedCreds.Token
-				fmt.Println("Will use old token", c.Token)
 				return c.Token, nil
 			}
 		}
@@ -108,7 +102,6 @@ func (c *Client) login(a Auth, conf Config) (string, error) {
 	fmt.Errorf("Token file %s does not exist ", fileName)
 
 	url := conf.Urlauth + conf.Apiverauth + "/tokens"
-	fmt.Println("Openstack URL:>", url)
 
 	jsonStr, parseErr := json.Marshal(a)
 	if parseErr != nil {
@@ -133,9 +126,6 @@ func (c *Client) login(a Auth, conf Config) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	fmt.Println("response Status:", resp.Status)
-	fmt.Println("response Headers:", resp.Header)
-
 	body, _ := ioutil.ReadAll(resp.Body)
 
 	jsonParsed, err := gabs.ParseJSON(body)
@@ -144,13 +134,9 @@ func (c *Client) login(a Auth, conf Config) (string, error) {
 	c.Token = s.Trim(c.Token, "\"")
 	var exp string = jsonParsed.Path("access.token.expires").String()
 	exp = s.Trim(exp, "\"")
-	fmt.Println("Expiration", exp)
 	layout := "2006-01-02T15:04:05Z"
 	c.Expires, _ = time.Parse(layout, exp)
-	fmt.Println("Time object", c.Expires)
-	fmt.Println("login results:", c.Token)
 	credsJson, _ := json.Marshal(*c)
-	fmt.Println("Marshaled creds", string(credsJson))
 	errwrite := ioutil.WriteFile(fileName, credsJson, 0644)
 	if errwrite != nil {
 		fmt.Errorf("Issues serializing token file %v\n", errwrite)
@@ -161,11 +147,10 @@ func (c *Client) login(a Auth, conf Config) (string, error) {
 
 func (c *Client) getAPIClient(auth Auth, conf Config) error {
 	if c.Token == "" {
-		token, err := c.login(auth, conf)
+		_, err := c.login(auth, conf)
 		if err != nil {
 			return fmt.Errorf("Error with credentials provided: %v", err)
 		}
-		fmt.Printf("Returned token %s \n", token)
 
 	}
 	return nil
@@ -178,8 +163,6 @@ func (c *Client) buildNode(auth Auth, conf Config, nodeData serverData, nodeType
 	}
 
 	var url = conf.Urlcomp + conf.Apivercomp + "/" + auth.Body.Tenant + "/servers"
-
-	fmt.Println("After login returned with token", token)
 
 	jsonStr, parseErr := json.Marshal(nodeData)
 	if parseErr != nil {
@@ -202,9 +185,6 @@ func (c *Client) buildNode(auth Auth, conf Config, nodeData serverData, nodeType
 		panic(err)
 	}
 	defer resp.Body.Close()
-
-	fmt.Println("response Status:", resp.Status)
-	fmt.Println("response Headers:", resp.Header)
 
 	body, _ := ioutil.ReadAll(resp.Body)
 
@@ -312,7 +292,6 @@ func (c *Client) listFlavors(auth Auth, conf Config) (map[string]string, error) 
 func (c *Client) listNetworks(auth Auth, conf Config) (map[string]string, error) {
 	objType := "networks"
 	url := conf.Urlnet + conf.Apivernet + "/" + objType
-	fmt.Println("Network URL", url)
 	body, err := c.listObjects(auth, conf, url, objType)
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("Cannot load networks. %v", err))
@@ -363,13 +342,11 @@ func (c *Client) assignFloatingIP(auth Auth, conf Config, serverID string, ip st
 	}
 
 	url := conf.Urlcomp + conf.Apivercomp + "/" + auth.Body.Tenant + "/servers/" + serverID + "/action"
-	fmt.Println("Action URL:>", url)
 
 	var actionObj floatingIPAction
 	actionObj.AddFloatingIp.Address = ip
 
 	jsonStr, parseErr := json.Marshal(actionObj)
-	log.Println("Serialized floating IP structure", string(jsonStr))
 	if parseErr != nil {
 		log.Println("Something is wrong with action body", parseErr)
 		return fmt.Errorf("Something is wrong with auth body: %v", parseErr)
@@ -387,8 +364,6 @@ func (c *Client) assignFloatingIP(auth Auth, conf Config, serverID string, ip st
 		Timeout:   30 * time.Second,
 	}
 	resp, err := client.Do(req)
-	body, _ := ioutil.ReadAll(resp.Body)
-	log.Println("Floating IP resp", string(body), err)
 	if err != nil {
 		panic(err)
 	}
@@ -419,8 +394,6 @@ func (c *Client) listObjects(auth Auth, conf Config, url string, objType string)
 		panic(err)
 	}
 	defer resp.Body.Close()
-
-	fmt.Println("response Status:", resp.Status)
 
 	body, _ := ioutil.ReadAll(resp.Body)
 

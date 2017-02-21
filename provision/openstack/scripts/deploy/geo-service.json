@@ -1,0 +1,17 @@
+{
+  "kind": "Service",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "geo-berlin-svc"
+  },
+  "spec": {
+    "ports": [{
+      "port": 8500,
+      "targetPort": 5000
+    }],
+    "selector": {
+      "api": "geo-berlin"
+    },
+    "type": "NodePort"
+  }
+}

@@ -79,6 +79,10 @@ mv ./kubectl /usr/local/bin/kubectl
 #cp generated/kubeconfig -p $HOME/.kube/config
 
 echo -e "server $dcip\nupdate add $nodeName.$domainName.$domainSuf 3600 A $ip\nsend\n" | nsupdate -v
-
+wget https://raw.githubusercontent.com/sashajeltuhin/ket/master/provision/openstack/scripts/deployapp.sh
+wget https://raw.githubusercontent.com/sashajeltuhin/ket/master/provision/openstack/scripts/deploy/osrm.yaml
+wget https://raw.githubusercontent.com/sashajeltuhin/ket/master/provision/openstack/scripts/deploy/geo-service.json
+wget https://raw.githubusercontent.com/sashajeltuhin/ket/master/provision/openstack/scripts/deploy/geo-ingress.yaml
+chmod +x ./depoyapp.sh
 echo "Post to its own web server"
 wget http://$ip:$webPort/install?ip=$ip --post-data $postData -o /tmp/appscale.log
