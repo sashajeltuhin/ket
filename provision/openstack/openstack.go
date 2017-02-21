@@ -197,6 +197,12 @@ func makeInfra(opts KetOpts) error {
 		opts.SecGroup = askForInput(secgroups, reader)
 	}
 
+	if opts.AdminPass == "" {
+		fmt.Print("Set Admin password for the cluster: ")
+		pass, _ := gopass.GetPasswdMasked()
+		opts.AdminPass = strings.Trim(string(pass), "\n")
+	}
+
 	server := buildNodeData("ketautoinstall", opts)
 	var nodeID, err = buildNode(a, conf, server, opts, "install", "")
 
