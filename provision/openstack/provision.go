@@ -224,6 +224,7 @@ func provisionKetNodes(bag KetBag, ip string) error {
 		return errors.New("To provision nodes valid IP of the installer node is required")
 	}
 	//assign floating IP to the installer, if available
+	log.Println("About to assign floating IP to installer", bag.Opts.InstallNodeIP)
 	if bag.Opts.InstallNodeIP == true {
 		c := Client{}
 		ipList, err := c.listFloatingIPs(bag.Auth, bag.Config)
@@ -233,6 +234,7 @@ func provisionKetNodes(bag KetBag, ip string) error {
 				floatingIP := ipList[key]
 				if floatingIP != bag.Opts.IngressIP {
 					found = true
+					log.Println("Available floating IP found. Assigning...", floatingIP)
 					errIP := c.assignFloatingIP(bag.Auth, bag.Config, ip, floatingIP)
 					if errIP != nil {
 						log.Println("Error assigning floating ip to the install node", errIP)

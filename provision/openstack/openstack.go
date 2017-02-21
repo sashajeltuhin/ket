@@ -203,15 +203,17 @@ func makeInfra(opts KetOpts) error {
 		opts.AdminPass = strings.Trim(string(pass), "\n")
 	}
 
+	fmt.Println("Request floating IP for installer", opts.InstallNodeIP)
+
 	server := buildNodeData("ketautoinstall", opts)
 	var nodeID, err = buildNode(a, conf, server, opts, "install", "")
 
 	if err != nil {
-		fmt.Print("Error instantiating Openstack client", err)
+		fmt.Println("Error instantiating Openstack client", err)
 		return err
 	}
 
-	fmt.Printf("Orchestration started on node ", nodeID)
+	fmt.Printf("Orchestration started on node %s", nodeID)
 
 	return nil
 }
