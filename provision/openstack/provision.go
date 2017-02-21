@@ -87,7 +87,7 @@ func buildNode(auth Auth, conf Config, nodeData serverData, opts KetOpts, nodeTy
 	if conf.InstallscriptURL == "" {
 		switch nodeType {
 		case "install":
-			conf.InstallscriptURL = "https://raw.githubusercontent.com/sashajeltuh	in/ket/master/provision/openstack/scripts/ketinstall.sh"
+			conf.InstallscriptURL = "https://raw.githubusercontent.com/sashajeltuhin/ket/master/provision/openstack/scripts/ketinstall.sh"
 			break
 		default:
 			conf.InstallscriptURL = "https://raw.githubusercontent.com/sashajeltuhin/ket/master/provision/openstack/scripts/ketnode.sh"
