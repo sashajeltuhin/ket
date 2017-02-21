@@ -235,6 +235,7 @@ func provisionKetNodes(bag KetBag, ip string) error {
 				if floatingIP != bag.Opts.IngressIP {
 					found = true
 					log.Println("Available floating IP found. Assigning...", floatingIP)
+					floatingIP = strings.Trim(floatingIP, "\"")
 					errIP := c.assignFloatingIP(bag.Auth, bag.Config, ip, floatingIP)
 					if errIP != nil {
 						log.Println("Error assigning floating ip to the install node", errIP)
@@ -328,7 +329,9 @@ func startInstall(opts KetOpts, nodes ProvisionedNodes) {
 	}
 	log.Println("Kismatic Install:", string(out))
 	cmdDeploy := "/ket/deployapp.sh"
-	outDep, errDep := exec.Command(cmdDeploy).Output()
+	argsDeploy := []string{"run"}
+	log.Println("Running App Deploy", cmdDeploy, argsDeploy)
+	outDep, errDep := exec.Command(cmdDeploy, argsDeploy...).Output()
 	if errDep != nil {
 		log.Println("Error deploying apps", string(outDep), errDep)
 	}
