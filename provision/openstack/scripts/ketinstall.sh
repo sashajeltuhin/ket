@@ -30,16 +30,24 @@ search $domainName.$domainSuf
 domain $domainName.$domainSuf
 EOF
 chattr +i /etc/resolv.conf
-echo "Installing Docker"
-tee /etc/yum.repos.d/docker.repo <<-'EOF'
-[dockerrepo]
-name=Docker Repository
-baseurl=https://yum.dockerproject.org/repo/main/centos/7
-enabled=1
-gpgcheck=1
-gpgkey=https://yum.dockerproject.org/gpg
+echo "Install and configure Docker"
+yum install -y yum-utils device-mapper-persistent-data lvm2
+sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+yum makecache fast
+yum install docker-ce
+touch /etc/docker/daemon.json
+cat > /etc/docker/daemon.json << EOF
+{
+  "storage-driver": "devicemapper"
+}
 EOF
-yum install -y http://yum.dockerproject.org/repo/main/centos/7/Packages/docker-engine-1.11.1-1.el7.centos.x86_64.rpm
+mkdir /etc/systemd/system/docker.service.d
+touch /etc/systemd/system/docker.service.d/docker.conf
+cat > /etc/systemd/system/docker.service.d/docker.conf << EOF
+[Service]
+ExecStart=
+ExecStart=/usr/bin/dockerd --exec-opt native.cgroupdriver=systemd
+EOF
 systemctl daemon-reload
 systemctl start docker
 systemctl enable docker
@@ -70,10 +78,10 @@ curl https://kismatic-packages-rpm.s3-accelerate.amazonaws.com/kismatic.repo -o 
 mkdir /ket
 chmod -R 777 /ket
 cd /ket
-curl -L https://kismatic-installer.s3-accelerate.amazonaws.com/latest/kismatic.tar.gz | tar -zx
 ssh-keygen -t rsa -b 4096 -f kismaticuser.key -P ""
 
-curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+wget -q -O- https://github.com/apprenda/kismatic/releases/download/v1.5.0/kismatic-v1.5.0-linux-amd64.tar.gz | tar -zxf-
+
 chmod +x ./kubectl
 mv ./kubectl /usr/local/bin/kubectl
 #cp generated/kubeconfig -p $HOME/.kube/config

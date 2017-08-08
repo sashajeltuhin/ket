@@ -43,6 +43,7 @@ type KetOpts struct {
 	OSUser          string
 	OSUserPass      string
 	IngressIP       string
+	CNI             string
 	InstallNodeIP   bool
 }
 
@@ -81,21 +82,22 @@ Smallish instances will be created with public IP addresses. The command will no
 	cmd.Flags().StringVarP(&opts.AdminPass, "admin-pass", "", "", "Admin password")
 	cmd.Flags().StringVarP(&opts.SSHUser, "ssh-user", "", "kismaticuser", "SSH User")
 	cmd.Flags().StringVarP(&opts.SSHFile, "ssh-file", "", "/ket/kismaticuser.key", "SSH File")
-	cmd.Flags().StringVarP(&opts.Domain, "domain", "", "ket", "Domain name")
+	cmd.Flags().StringVarP(&opts.Domain, "domain", "", "acplab", "Domain name")
 	cmd.Flags().StringVarP(&opts.Suffix, "suffix", "", "local", "Domain suffix")
-	cmd.Flags().StringVarP(&opts.DNSip, "dns-ip", "", "10.20.50.175", "Domain IP")
-	cmd.Flags().StringVarP(&opts.Image, "image", "", "", "Preferred Image")               //177663bc-0c5e-43b3-99d8-7a457ae4f085
-	cmd.Flags().StringVarP(&opts.Flavor, "flavor", "", "", "Preferred Flavor")            //f2c96d12-5454-450c-9ae6-177c4d82eaf3
-	cmd.Flags().StringVarP(&opts.Network, "network", "", "", "Preferred Network")         //22e1a428-74a3-4fc1-bd5c-41e10b8ff617
-	cmd.Flags().StringVarP(&opts.SecGroup, "sec-grp", "", "", "Preferred Security Group") //ket
+	cmd.Flags().StringVarP(&opts.DNSip, "dns-ip", "", "10.10.100.35", "Domain IP")
+	cmd.Flags().StringVarP(&opts.Image, "image", "", "", "Preferred Image")                       //177663bc-0c5e-43b3-99d8-7a457ae4f085
+	cmd.Flags().StringVarP(&opts.Flavor, "flavor", "", "", "Preferred Flavor")                    //f2c96d12-5454-450c-9ae6-177c4d82eaf3
+	cmd.Flags().StringVarP(&opts.Network, "network", "", "", "Preferred Network")                 //22e1a428-74a3-4fc1-bd5c-41e10b8ff617 // 7f80861a-7a75-445d-ae61-3422c39f6cc7
+	cmd.Flags().StringVarP(&opts.SecGroup, "sec-grp", "", "apprenda", "Preferred Security Group") //ket
 	cmd.Flags().StringVarP(&opts.EtcdName, "etcd-name", "", "ketautoetcd", "ETCD node name pattern")
 	cmd.Flags().StringVarP(&opts.MasterName, "master-name", "", "ketautomaster", "Master node name pattern")
 	cmd.Flags().StringVarP(&opts.WorkerName, "worker-name", "", "ketautoworker", "Worker node name pattern")
 	cmd.Flags().StringVarP(&opts.OSUrl, "os-url", "", "https://api-trial6.client.metacloud.net", "Openstack URL")
-	cmd.Flags().StringVarP(&opts.OSTenant, "os-tenant", "", "f4ec4723e8a541d68ef993b47ef75c94", "Openstack Tenant ID")
-	cmd.Flags().StringVarP(&opts.OSUser, "os-user", "", "", "Openstack User Name")
+	cmd.Flags().StringVarP(&opts.OSTenant, "os-tenant", "", "6163243e6d8c4a2f9398e24bc9f33efe", "Openstack Tenant ID")
+	cmd.Flags().StringVarP(&opts.OSUser, "os-user", "", "sasha", "Openstack User Name")
 	cmd.Flags().StringVarP(&opts.OSUserPass, "os-pass", "", "", "Openstack User Password")
 	cmd.Flags().StringVarP(&opts.IngressIP, "ingress-ip", "", "", "Floating IP for the ingress server")
+	cmd.Flags().StringVarP(&opts.CNI, "cni", "", "", "CNI provider. Options include: 'calico','weave','contiv','custom'")
 	cmd.Flags().BoolVarP(&opts.InstallNodeIP, "install-ip", "", true, "Set floating IP on the install node, if available. Will be used to establish ssh connection")
 
 	return cmd
@@ -138,6 +140,12 @@ func makeInfra(opts KetOpts) error {
 		fmt.Print("Provide IP of the DNS: ")
 		uname, _ := reader.ReadString('\n')
 		opts.DNSip = strings.Trim(uname, "\n")
+	}
+
+	if opts.CNI == "" {
+		fmt.Print("CNI provider. Options include:\n 'calico','weave','contiv','custom'")
+		cni, _ := reader.ReadString('\n')
+		opts.CNI = strings.Trim(cni, "\n")
 	}
 
 	conf.Urlauth = fmt.Sprintf("%s:%s/", opts.OSUrl, KeystonePort)

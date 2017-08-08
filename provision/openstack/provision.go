@@ -309,6 +309,7 @@ func startInstall(opts KetOpts, nodes ProvisionedNodes) {
 		MasterNodeShortName: nodes.Master[0].Host,
 		SSHKeyFile:          opts.SSHFile,
 		SSHUser:             opts.SSHUser,
+		CNI:                 opts.CNI,
 	})
 	if err != nil {
 		log.Printf("Error creating plan", err)
