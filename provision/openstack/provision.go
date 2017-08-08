@@ -329,15 +329,6 @@ func startInstall(opts KetOpts, nodes ProvisionedNodes) {
 		log.Println("Error installing Kismatic", string(out), err)
 	}
 	log.Println("Kismatic Install:", string(out))
-	cmdDeploy := "/ket/deployapp.sh"
-	argsDeploy := []string{"run"}
-	log.Println("Running App Deploy", cmdDeploy, argsDeploy)
-	outDep, errDep := exec.Command(cmdDeploy, argsDeploy...).Output()
-	if errDep != nil {
-		log.Println("Error deploying apps", string(outDep), errDep)
-	}
-	log.Println("Deploying Apps:", string(outDep))
-
 }
 
 func makePlan(pln *Plan) (string, error) {

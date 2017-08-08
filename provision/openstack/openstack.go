@@ -143,7 +143,7 @@ func makeInfra(opts KetOpts) error {
 	}
 
 	if opts.CNI == "" {
-		fmt.Print("CNI provider. Options include:\n 'calico','weave','contiv','custom'")
+		fmt.Print("CNI provider. Options include:\n 'calico','weave','contiv','custom'\n")
 		cni, _ := reader.ReadString('\n')
 		opts.CNI = strings.Trim(cni, "\n")
 	}

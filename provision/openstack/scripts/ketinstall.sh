@@ -32,9 +32,9 @@ EOF
 chattr +i /etc/resolv.conf
 echo "Install and configure Docker"
 yum install -y yum-utils device-mapper-persistent-data lvm2
-sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
 yum makecache fast
-yum install docker-ce
+yum install -y docker-ce
 touch /etc/docker/daemon.json
 cat > /etc/docker/daemon.json << EOF
 {
@@ -87,10 +87,5 @@ mv ./kubectl /usr/local/bin/kubectl
 #cp generated/kubeconfig -p $HOME/.kube/config
 
 echo -e "server $dcip\nupdate add $nodeName.$domainName.$domainSuf 3600 A $ip\nsend\n" | nsupdate -v
-wget https://raw.githubusercontent.com/sashajeltuhin/ket/master/provision/openstack/scripts/deployapp.sh
-wget https://raw.githubusercontent.com/sashajeltuhin/ket/master/provision/openstack/scripts/deploy/osrm.yaml
-wget https://raw.githubusercontent.com/sashajeltuhin/ket/master/provision/openstack/scripts/deploy/geo-service.json
-wget https://raw.githubusercontent.com/sashajeltuhin/ket/master/provision/openstack/scripts/deploy/geo-ingress.yaml
-chmod +x ./deployapp.sh
 echo "Post to its own web server"
 wget http://$ip:$webPort/install?ip=$ip --post-data $postData -o /tmp/appscale.log
